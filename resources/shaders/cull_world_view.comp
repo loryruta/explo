@@ -1,0 +1,123 @@
+#version 460
+
+#extension GL_EXT_shader_explicit_arthmetic_types
+
+#extension GL_EXT_debug_printf : enable
+
+#define EXPLO_CHUNK_SIZE vec3(16, 16, 16)
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+struct Camera
+{
+    vec3 position; float _pad;
+    vec3 forward; float _pad1;
+    float fov;
+    float near_plane;
+    float far_plane;
+    float aspect_ratio;
+};
+
+struct WorldViewInfo
+{
+    ivec3 start; int render_distance;
+};
+
+layout(push_constant) uniform PushConstants
+{
+    Camera camera;
+    WorldViewInfo world_view_info;
+};
+
+struct ChunkGeometryInfo
+{
+    uint index_count;
+    uint instance_count;
+    uint first_index;
+    uint vertex_offset;
+    uint first_instance;
+    uint _pad[3];
+};
+
+layout(set = 0, binding = 0, rgba32ui) readonly uimage3D baked_world_view;
+
+struct DrawCall
+{
+    uint index_count;
+    uint instance_count;
+    uint first_index;
+    uint vertex_offset;
+    uint first_instance;
+};
+
+layout(set = 0, binding = 1) writeonly buffer ChunkDrawList
+{
+    DrawCall chunk_draw_list[];
+};
+
+layout(set = 0, binding = 2) buffer ChunkDrawListIndex
+{
+    uint chunk_draw_list_idx;
+};
+
+bool is_inside_world_view(ivec3 position)
+{
+    int side = render_distance * 2 + 1;
+    return position.x < side && position.y < side && position.z < side;
+}
+
+ChunkGeometryInfo read_chunk_geometry_info(ivec3 chunk_pos)
+{
+    uvec4 i0 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1));
+    uvec4 i1 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1) + ivec3(1, 0, 0));
+
+    ChunkGeometryInfo result;
+    result.index_count = i0.r;
+    result.instance_count = i0.g;
+    result.first_index = i0.b;
+    result.vertex_offset = i0.a;
+    result.first_instance = i1.r;
+    result._pad[0] = i1.g;
+    result._pad[1] = i1.b;
+    result._pad[2] = i1.a;
+    return result;
+}
+
+void add_chunk_draw_call(ChunkGeometryInfo info)
+{
+    uint cur_idx = atomicAdd(chunk_draw_list_idx);
+    // TODO check if it's outside chunk draw list max capacity (~8MB)
+
+    DrawCall draw_call;
+    draw_call.index_count = info.index_count;
+    draw_call.instance_count = info.instance_count;
+    draw_call.first_index = info.first_index;
+    draw_call.vertex_offset = info.vertex_offset;
+    draw_call.first_instance = info.first_instance;
+    chunk_draw_list[cur_idx] = draw_call;
+}
+
+bool test_frustum_aabb(Camera frustum, vec3 aabb_min, vec3 aabb_max)
+{
+    return true; // TODO implement SAT
+}
+
+void main()
+{
+    uvec3 camera_chunk_pos = floor(camera.position / EXPLO_CHUNK_SIZE);
+    uvec3 chunk_pos = gl_GlobalInvocationID;
+
+    if (!is_inside_world_view(chunk_pos)) return;
+
+    chunk_pos += camera_chunk_pos - render_distance; // Make the chunk position relative to the camera
+
+    vec3 aabb_min = chunk_pos * EXPLO_CHUNK_SIZE;
+    vec3 aabb_max = (chunk_pos + 1) * EXPLO_CHUNK_SIZE;
+
+    // If the frustum intersects the chunk's aabb then we add the chunk to the draw list
+    if (test_frustum_aabb(camera, aabb_min, aabb_max))
+    {
+        ChunkGeometryInfo chunk_geom_info = read_chunk_geometry_info(gl_GlobalInvocationID);
+        add_chunk_draw_call(chunk_geom_info);
+    }
+}

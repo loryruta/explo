@@ -1,0 +1,20 @@
+{
+	"name": "explo",
+	"version": "1.0.0",
+	"description": "Explo(RE/DE)",
+
+	"dependencies": [
+		"entt",
+		"catch2",
+
+		"glm",
+		"stb",
+		"meshoptimizer",
+		"fmt",
+		"glfw3",
+		"tinyfiledialogs",
+		"tinygltf",
+		"gtest",
+		"benchmark"
+	]
+}
