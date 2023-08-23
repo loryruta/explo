@@ -75,8 +75,8 @@ vren::render_graph_t CullWorldView::create_render_graph_node(vren::render_graph_
 {
 	vren::render_graph_node* node = allocator.allocate();
 	node->set_name("CullWorldView");
-	node->set_src_stage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-	node->set_dst_stage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	node->set_src_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+	node->set_dst_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle, }, VK_ACCESS_SHADER_WRITE_BIT);
 	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle, }, VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
 	node->add_image({
@@ -94,6 +94,6 @@ vren::render_graph_t CullWorldView::create_render_graph_node(vren::render_graph_
 
 vren::pipeline CullWorldView::create_pipeline()
 {
-	vren::shader_module shader = vren::load_shader_module_from_file(m_renderer.m_context, "./shaders/cull_world_view.comp");
+	vren::shader_module shader = vren::load_shader_module_from_file(m_renderer.m_context, "./resources/shaders/cull_world_view.comp.spv");
 	return vren::create_compute_pipeline(m_renderer.m_context, vren::specialized_shader(shader));
 }

@@ -26,9 +26,6 @@ namespace explo
 
 		/// Dispatches the chained jobs asynchronously on the given thread pool.
 		void dispatch_on_thread_pool(ThreadPool& thread_pool) const;
-
-	private:
-		void enqueue_async_job(ThreadPool& thread_pool, Job const& job, Job const& next_job);
 	};
 
 

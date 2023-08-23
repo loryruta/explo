@@ -20,11 +20,11 @@ void DrawChunkList::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 	auto index_buffer = m_renderer.m_baked_world_view->m_index_buffer.get_buffer();
 	auto instance_buffer = m_renderer.m_baked_world_view->m_instance_buffer.get_buffer();
 
-	glm::uvec2 screen{}; // todo
-	m_basic_renderer.make_rendering_scope(cmd_buf, screen, *m_renderer.m_gbuffer, *m_renderer.m_depth_buffer, [&]()
+	glm::uvec2 fb_size = m_renderer.get_framebuffer_size();
+	m_basic_renderer.make_rendering_scope(cmd_buf, fb_size, *m_renderer.m_gbuffer, *m_renderer.m_depth_buffer, [&]()
 	{
-		m_basic_renderer.set_viewport(cmd_buf, screen.x, screen.y);
-		m_basic_renderer.set_scissor(cmd_buf, screen.x, screen.y);
+		m_basic_renderer.set_viewport(cmd_buf, fb_size.x, fb_size.y);
+		m_basic_renderer.set_scissor(cmd_buf, fb_size.x, fb_size.y);
 
 		m_basic_renderer.set_vertex_buffer(cmd_buf, *vertex_buffer);
 		m_basic_renderer.set_index_buffer(cmd_buf, *index_buffer);
@@ -40,7 +40,7 @@ void DrawChunkList::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 			m_renderer.m_chunk_draw_list.m_buffer.m_handle, 0, // Buffer
 			m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle, 0, // Count buffer
 			274625 /* 65^3, derived from max render distance */,
-			0
+			sizeof(VkDrawIndexedIndirectCommand) // stride
 			);
 	});
 
@@ -59,8 +59,8 @@ vren::render_graph_t DrawChunkList::create_render_graph_node(vren::render_graph_
 
 	vren::render_graph_node* node = allocator.allocate();
 	node->set_name("DrawChunkList");
-	node->set_src_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-	node->set_dst_stage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	node->set_src_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+	node->set_dst_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle, }, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
 	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle, }, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);

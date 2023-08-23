@@ -34,6 +34,8 @@ namespace explo
 		friend class DrawChunkList;
 
 	private:
+		GLFWwindow* m_window;
+
 		vren::context m_context;
 
 		profile_stats m_profile_stats;
@@ -75,8 +77,10 @@ namespace explo
 		VkClearColorValue m_background_color = VkClearColorValue{0.77f, 0.6f, 1.0f, 0.0f};
 		vren::camera m_camera;
 
-        explicit Renderer();
+        explicit Renderer(GLFWwindow* m_window);
         ~Renderer();
+
+		glm::uvec2 get_framebuffer_size() const;
 
 		auto const& get_profile_stats() const { return m_profile_stats; }
 

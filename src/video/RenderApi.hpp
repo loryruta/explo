@@ -3,6 +3,7 @@
 #include <vector>
 #include <functional>
 
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 #include "world/BlockRegistry.hpp"
@@ -13,7 +14,7 @@ namespace explo
 	/// An API used from core to perform rendering actions.
 	namespace RenderApi
 	{
-		void init();
+		void init(GLFWwindow* window);
 		void destroy();
 
 		void window_resize(uint32_t width, uint32_t height);

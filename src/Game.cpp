@@ -100,12 +100,16 @@ std::unique_ptr<Game> s_game;
 
 void explo::init(GLFWwindow* window)
 {
+	RenderApi::init(window);
+
 	s_game = std::make_unique<Game>(window);
 }
 
 void explo::shutdown()
 {
 	s_game.reset();
+
+	RenderApi::destroy();
 }
 
 void explo::render()

@@ -114,7 +114,7 @@ vren::vk_utils::combined_image_view DeviceImage3d::create_image()
 	image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 	image_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	image_info.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+	image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	VmaAllocationCreateInfo alloc_create_info{};
 	alloc_create_info.requiredFlags = m_memory_properties;
@@ -145,6 +145,7 @@ vren::vk_utils::combined_image_view DeviceImage3d::create_image()
 	image_view_info.flags = NULL;
 	image_view_info.image = image.m_image.m_handle;
 	image_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
+	image_view_info.format = m_format;
 	image_view_info.components.r = VK_COMPONENT_SWIZZLE_R;
 	image_view_info.components.g = VK_COMPONENT_SWIZZLE_G;
 	image_view_info.components.b = VK_COMPONENT_SWIZZLE_B;

@@ -8,7 +8,9 @@
 
 using namespace explo;
 
-Renderer::Renderer() :
+Renderer::Renderer(GLFWwindow* window) :
+	m_window(window),
+
 	m_context([]() {
 		vren::context_info context_info{
 			.m_app_name = "explo",
@@ -28,7 +30,7 @@ Renderer::Renderer() :
 
     m_surface([&]() {
         VkSurfaceKHR surface_handle{};
-        VREN_CHECK(glfwCreateWindowSurface(m_context.m_instance, game().get_window(), nullptr, &surface_handle), &m_context);
+        VREN_CHECK(glfwCreateWindowSurface(m_context.m_instance, m_window, nullptr, &surface_handle), &m_context);
         return vren::vk_surface_khr(m_context, surface_handle);
     }()),
 
@@ -40,7 +42,7 @@ Renderer::Renderer() :
 
     m_cluster_and_shade(m_context),
 	m_imgui_renderer(m_context, vren::imgui_windowing_backend_hooks{
-		.m_init_callback      = []() { ImGui_ImplGlfw_InitForVulkan(game().get_window(), true); },
+		.m_init_callback      = [this]() { ImGui_ImplGlfw_InitForVulkan(m_window, true); },
 		.m_new_frame_callback = []() { ImGui_ImplGlfw_NewFrame(); },
 		.m_shutdown_callback  = []() { ImGui_ImplGlfw_Shutdown(); }
 	}),
@@ -48,16 +50,25 @@ Renderer::Renderer() :
     m_light_array(m_context),
     m_material_buffer(m_context),
 
-	m_chunk_draw_list(
-		vren::vk_utils::create_device_only_buffer(m_context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, nullptr, k_chunk_draw_list_buffer_size)
-		),
-	m_chunk_draw_list_idx(
-		vren::vk_utils::create_device_only_buffer(m_context, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, nullptr, sizeof(uint32_t))
-		),
+	m_chunk_draw_list(vren::vk_utils::create_device_only_buffer(
+		m_context,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+		nullptr,
+		k_chunk_draw_list_buffer_size
+		)),
+	m_chunk_draw_list_idx(vren::vk_utils::create_device_only_buffer(
+		m_context,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+		nullptr,
+		sizeof(uint32_t)
+		)),
 
 	m_cull_world_view(*this),
 	m_draw_chunk_list(*this)
 {
+	m_baked_world_view = std::make_unique<BakedWorldView>(*this, 5 /* render_distance */);
+
+	// Creates some dummy lights to visualize the world
 	glm::vec3* point_light_positions = m_light_array.m_point_light_position_buffer.get_mapped_pointer<glm::vec3>();
 	vren::point_light* point_lights = m_light_array.m_point_light_buffer.get_mapped_pointer<vren::point_light>();
 
@@ -76,6 +87,14 @@ Renderer::Renderer() :
 
 Renderer::~Renderer()
 {
+}
+
+glm::uvec2 Renderer::get_framebuffer_size() const
+{
+	return glm::uvec2(
+		m_presenter.get_swapchain()->m_image_width,
+		m_presenter.get_swapchain()->m_image_height
+		);
 }
 
 void Renderer::on_swapchain_change(vren::swapchain const& swapchain)

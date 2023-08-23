@@ -89,6 +89,11 @@ include("external/vren/VRen.cmake")
 
 setup_resources(explo_lib)
 
+compile_shader(SHADERS "${CMAKE_CURRENT_LIST_DIR}/resources/shaders/cull_world_view.comp" "${CMAKE_CURRENT_BINARY_DIR}/resources/shaders/cull_world_view.comp.spv")
+
+add_custom_target(explo_shaders DEPENDS ${SHADERS})
+add_dependencies(explo_lib explo_shaders)
+
 # ------------------------------------------------------------------------------------------------
 # ImGui GLFW backend binary
 # ------------------------------------------------------------------------------------------------

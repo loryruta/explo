@@ -6,9 +6,9 @@ using namespace explo;
 
 std::unique_ptr<Renderer> s_renderer;
 
-void RenderApi::init()
+void RenderApi::init(GLFWwindow* window)
 {
-	// TODO init Renderer
+	s_renderer = std::make_unique<Renderer>(window);
 }
 
 void RenderApi::destroy()
