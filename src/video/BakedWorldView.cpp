@@ -103,8 +103,9 @@ BakedWorldView::~BakedWorldView()
 
 void BakedWorldView::shift(glm::ivec3 const& offset)
 {
-	m_circular_grid.m_image_info.m_start =
-		(m_circular_grid.m_image_info.m_start + offset) % m_circular_grid.m_side;
+	int side = m_circular_grid.m_side;
+	glm::ivec3& start = m_circular_grid.m_image_info.m_start;
+	start = (side + (start + offset) % side) % side; // Positive modulo
 }
 
 void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk)

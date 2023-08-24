@@ -93,6 +93,7 @@ namespace explo
 
 		glm::mat4& camera_matrix() { return m_camera_matrix; }
 
+		bool has_world_view() const { return bool(m_baked_world_view); }
 		void recreate_world_view(int render_distance);
 		BakedWorldView& get_world_view();
 

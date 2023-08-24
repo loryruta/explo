@@ -17,12 +17,14 @@ namespace explo
 		size_t m_size;
 
 		std::vector<bool> m_page_status;
+		int m_num_allocated_pages = 0;
 
 	public:
 		explicit VirtualAllocator(size_t size);
 		~VirtualAllocator();
 
 		size_t get_size() const { return m_size; }
+		int get_num_allocated_pages() const { return m_num_allocated_pages; }
 
 		/// Resizes the managed memory to the given one.
 		void resize(size_t new_size);

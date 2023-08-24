@@ -16,15 +16,22 @@ uint32_t SurfaceWriter::add_vertex(SurfaceVertex const& v)
 
 void SurfaceWriter::add_triangle(SurfaceVertex const& v0, SurfaceVertex const& v1, SurfaceVertex const& v2)
 {
-	add_vertex(v0);
-	add_vertex(v1);
-	add_vertex(v2);
+	uint32_t i0 = add_vertex(v0);
+	uint32_t i1 = add_vertex(v1);
+	uint32_t i2 = add_vertex(v2);
+
+	add_index(i0); add_index(i1); add_index(i2);
 }
 
 void SurfaceWriter::add_quad(SurfaceVertex const& v0, SurfaceVertex const& v1, SurfaceVertex const& v2, SurfaceVertex const& v3)
 {
-	add_triangle(v0, v1, v2);
-	add_triangle(v2, v1, v3);
+	uint32_t i0 = add_vertex(v0);
+	uint32_t i1 = add_vertex(v1);
+	uint32_t i2 = add_vertex(v2);
+	uint32_t i3 = add_vertex(v3);
+
+	add_index(i0); add_index(i1); add_index(i2);
+	add_index(i2); add_index(i1); add_index(i3);
 }
 
 void SurfaceWriter::add_index(uint32_t index)

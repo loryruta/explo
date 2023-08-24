@@ -86,21 +86,25 @@ void DeviceImage3d::perform_write_region(
 	buffer_image_copy.imageOffset = {reg_pos.x, reg_pos.y, reg_pos.z};
 	buffer_image_copy.imageExtent = {uint32_t(reg_size.x), uint32_t(reg_size.y), uint32_t(reg_size.z)};
 
+	transit_image_layout(command_buffer, m_image->m_image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
 	vkCmdCopyBufferToImage(
 		command_buffer,
 		write_region_op.m_buffer->m_buffer.m_handle,
 		m_image->m_image.m_image.m_handle,
-		VK_IMAGE_LAYOUT_GENERAL,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&buffer_image_copy
 		);
+
+	transit_image_layout(command_buffer, m_image->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
 
 	resource_container.add_resources(write_region_op.m_buffer, m_image);
 }
 
 vren::vk_utils::combined_image_view DeviceImage3d::create_image()
 {
-	// Create image
+	// Creates the image
 	VkImageCreateInfo image_info{};
 	image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	image_info.pNext = nullptr;
@@ -138,7 +142,13 @@ vren::vk_utils::combined_image_view DeviceImage3d::create_image()
 			.m_allocation_info = alloc_info
 		};
 
-	// Create image view
+	// Immediately transits the image to VK_IMAGE_LAYOUT_GENERAL
+	vren::vk_utils::immediate_graphics_queue_submit(m_renderer.m_context, [&](VkCommandBuffer command_buffer, vren::resource_container& resource_container)
+	{
+		vren::vk_utils::transit_image_layout(command_buffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+	});
+
+	// Creates the image view
 	VkImageViewCreateInfo image_view_info{};
 	image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	image_view_info.pNext = nullptr;
@@ -162,6 +172,7 @@ vren::vk_utils::combined_image_view DeviceImage3d::create_image()
 	vren::vk_image_view image_view =
 		vren::vk_image_view(m_renderer.m_context, image_view_handle);
 
+	// Combines them into an image/image_view struct
 	return {
 		.m_image = std::move(image),
 		.m_image_view = std::move(image_view),

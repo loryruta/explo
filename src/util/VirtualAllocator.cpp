@@ -31,12 +31,10 @@ bool VirtualAllocator::allocate(size_t size, size_t& offset)
 	{
 		if (!m_page_status.at(i))
 		{
-			if (found_page_start_idx < 0)
-				found_page_start_idx = i;
+			if (found_page_start_idx < 0) found_page_start_idx = i;
 
 			num_found_pages++;
-			if (num_found_pages == num_required_pages)
-				break;
+			if (num_found_pages == num_required_pages) break;
 		}
 		else
 		{
@@ -47,7 +45,13 @@ bool VirtualAllocator::allocate(size_t size, size_t& offset)
 
 	if (found_page_start_idx >= 0)
 	{
-		offset = found_page_start_idx;
+		offset = found_page_start_idx * k_page_size;
+
+		for (int i = 0; i < num_required_pages; i++)
+			m_page_status[found_page_start_idx + i] = true;
+
+		m_num_allocated_pages += num_required_pages;
+
 		return true;
 	}
 
@@ -67,5 +71,6 @@ void VirtualAllocator::free(size_t offset)
 			break;
 
 		m_page_status[i] = false;
+		m_num_allocated_pages--;
 	}
 }

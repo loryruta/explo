@@ -33,9 +33,5 @@ void SyncJobExecutor::process()
 	}
 
 	for (JobT const& job : jobs)
-	{
 		job();
-	}
-
-	m_jobs.clear();
 }

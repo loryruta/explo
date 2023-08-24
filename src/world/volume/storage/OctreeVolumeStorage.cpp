@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include <glm/gtc/integer.hpp>
+
 #include "util/misc.hpp"
 
 using namespace explo;
@@ -9,11 +11,11 @@ using namespace explo;
 OctreeVolumeStorage::OctreeVolumeStorage(glm::uvec3 const& size) :
 	VolumeStorage(size)
 {
-	m_octree_resolution = glm::max(glm::max(ceil_to_power_of_2(size.x), ceil_to_power_of_2(size.y)), ceil_to_power_of_2(size.z));
+	m_octree_size = glm::ivec3(ceil_to_power_of_2(size.x), ceil_to_power_of_2(size.y), ceil_to_power_of_2(size.z));
+	m_octree_resolution = glm::log2(glm::max(glm::max(m_octree_size.x, m_octree_size.y), m_octree_size.z));
 
 	// Initialize the root node to be a big empty node
 	m_octree.m_block = 0; // Empty block
-	m_octree.m_children = {};
 }
 
 OctreeVolumeStorage::~OctreeVolumeStorage()
@@ -34,7 +36,9 @@ uint8_t OctreeVolumeStorage::get_block_type_at(glm::ivec3 const& block_pos) cons
 		);
 
 	uint64_t morton_code = make_morton_code(block_pos);
-	return follow_morton_code(morton_code, nullptr).m_block;
+
+	OctreeNode const& node = follow_morton_code(morton_code, nullptr);
+	return node.m_block;
 }
 
 void OctreeVolumeStorage::set_block_type_at(glm::ivec3 const& block_pos, uint8_t block_type)
@@ -47,94 +51,67 @@ void OctreeVolumeStorage::set_block_type_at(glm::ivec3 const& block_pos, uint8_t
 
 	uint64_t morton_code = make_morton_code(block_pos);
 
-	bool block_set = false;
-
-	follow_morton_code(morton_code, [&](OctreeNode const& const_node, uint32_t level, uint64_t morton_code) -> bool
+	OctreeNode* node = &m_octree;
+	for (int i = 0; i < m_octree_resolution; i++)
 	{
-		OctreeNode& node = const_cast<OctreeNode&>(const_node); // We don't want traverse_octree to be mutable, so we need this
-
-		uint32_t child_idx = (morton_code >> (m_octree_resolution - level - 1) * 3) & 0b111;
-		if (node.is_leaf())
+		if (node->m_block == block_type) return; // The block is already set throughout its morton path
+		else if (node->m_block != UINT8_MAX)
 		{
-			if (node.m_block != block_type)
+			// A node in its path is set to another block type. Set its children to that block type, and go on with our traversal.
+			// This happens when compaction is performed
+			for (int j = 0; j < 8; j++)
 			{
-				if (level + 1 == m_octree_resolution) // It's the last level, we can safely write the block
-					node.m_block = block_type;
-				else
-				{
-					// It's a higher level, we need to make it a parent and split it
-					for (size_t i = 0; i < 8; i++)
-					{
-						OctreeNode child_node{};
-						child_node.m_block = node.m_block;
-						child_node.m_children = {};
-						node.m_children[i] = std::make_shared<OctreeNode>(child_node);
-					}
-					node.m_block = UINT8_MAX; // Promote the node to parent
-
-					// Differentiate the current child entry from the other children
-					node.m_children.at(child_idx)->m_block = block_type;
-				}
-
-				block_set = false;
+				std::shared_ptr<OctreeNode>& child = node->m_children.at(j);
+				if (!child) child = std::make_shared<OctreeNode>();
+				child->m_block = node->m_block;
 			}
-
-			// We have to forcefully tell to stop the traversal since what was a leaf node before has now become a parent node
-			// and thus the traversal would proceed with it
-			return false;
+			node->m_block = UINT8_MAX; // Make the node a parent node
 		}
 
-		// TODO NOT WORKING :')
+		uint32_t child_idx = (morton_code >> (m_octree_resolution - i - 1) * 3) & 0b111;
 
-		return true;
-	});
-
-	if (block_set)
-	{
-		// TODO if the block was set we can think of "compacting" the octree: group 2x2x2 nodes set with the same block
+		std::shared_ptr<OctreeNode>& child = node->m_children.at(child_idx);
+		if (!child) child = std::make_shared<OctreeNode>();
+		node = child.get();
 	}
+
+	node->m_block = block_type;
+
+	// TODO Once the block is set, compact the octree: group 2x2x2 nodes set with the same block
 }
 
-void OctreeVolumeStorage::traverse_octree_recursive(
-	OctreeNode const& node,
-	uint32_t level,
-	uint64_t morton_code,
-	OctreeTraversalCallbackT const& callback
-	) const
+void OctreeVolumeStorage::traverse_octree_recursive(OctreeNode const& node, uint32_t level, uint64_t morton_code, OctreeTraversalCallbackT const& callback) const
 {
-	bool cutoff_branch = callback(node, level, morton_code);
+	callback(node, level, morton_code);
 
-	if (!cutoff_branch && !node.is_leaf())
+	if (node.m_block == UINT8_MAX)
 	{
-		for (uint32_t child_idx = 0; child_idx < node.m_children.size(); child_idx++)
+		for (int child_idx = 0; child_idx < 8; child_idx++)
 		{
-			std::shared_ptr<OctreeNode> child = node.m_children.at(child_idx);
-			if (!child)
-				return;
-
-			morton_code <<= 3;
-			morton_code |= child_idx & 0b111;
-
-			traverse_octree_recursive(*child, level + 1, morton_code, callback);
+			OctreeNode& child = *node.m_children.at(child_idx);
+			traverse_octree_recursive(child, level + 1, (morton_code << 3) | (child_idx & 0b111), callback);
 		}
 	}
 }
 
 void OctreeVolumeStorage::traverse_octree(OctreeTraversalCallbackT const& callback) const
 {
-	traverse_octree_recursive(m_octree, 0, 0, callback);
+	traverse_octree_recursive(m_octree, 0 /* level */, 0 /* morton_code */, callback);
 }
 
 OctreeVolumeStorage::OctreeNode const& OctreeVolumeStorage::follow_morton_code(uint64_t morton_code, OctreeTraversalCallbackT const& callback) const
 {
 	OctreeNode const* node = &m_octree;
 
-	for (uint32_t level = 0; level < m_octree_resolution; level++)
+	for (int i = 0; i < m_octree_resolution; i++)
 	{
-		uint32_t child_idx = (morton_code >> (m_octree_resolution - level - 1) * 3) & 0b111;
+		uint32_t child_idx = (morton_code >> (m_octree_resolution - i - 1) * 3) & 0b111;
 
-		if (callback && !callback(*node, level, morton_code))
+		if (callback)
+		{
+			callback(*node, i, morton_code);
 			break; // If the callback returns false, then stops the traversal
+		}
 
 		if (node->is_leaf()) break;
 		else
@@ -150,15 +127,16 @@ uint64_t OctreeVolumeStorage::make_morton_code(glm::ivec3 const& position)
 	uint32_t z = position.z;
 
 	uint64_t morton_code = 0;
+	int i = 0;
 	while (x || y || z)
 	{
-		morton_code |= ((x & 1) << 2) | ((y & 1) << 1) | (z & 1);
+		morton_code |= ((x & 1) | ((y & 1) << 1) | ((z & 1) << 2)) << (i * 3);
 
 		x >>= 1;
 		y >>= 1;
 		z >>= 1;
 
-		morton_code <<= 3;
+		i++;
 	}
 	return morton_code;
 }

@@ -1,7 +1,6 @@
 #include "BlockySurfaceGenerator.hpp"
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
+#include <glm/glm.hpp>
 
 #include "world/Chunk.hpp"
 #include "Game.hpp"
@@ -22,8 +21,6 @@ void BlockySurfaceGenerator::write_block_geometry(
 
 	glm::vec3 f = chunk.to_world_position(block); // Block from (world space)
 	glm::vec3 t = f + (glm::vec3(Chunk::k_world_size) / glm::vec3(Chunk::k_grid_size)); // Block to (world space)
-
-	uint32_t v0, v1, v2, v3; // Face vertices
 
 	// Left face
 	if (block.x == 0 || chunk.get_block_type_at(block + glm::ivec3(-1, 0, 0)) == 0)
@@ -107,7 +104,7 @@ void BlockySurfaceGenerator::generate_surface_from_octree_volume(
 	SurfaceWriter& surface_writer
 	)
 {
-	volume_storage.traverse_octree([&](OctreeVolumeStorage::OctreeNode const& node, uint32_t level, uint64_t morton_code) -> bool
+	volume_storage.traverse_octree([&](OctreeVolumeStorage::OctreeNode const& node, uint32_t level, uint64_t morton_code)
 	{
 		uint8_t block_type = node.m_block;
 		if (node.is_leaf() && block_type > 0) // TODO check if it's a visible block or not using the BlockRegistry?
@@ -119,8 +116,6 @@ void BlockySurfaceGenerator::generate_surface_from_octree_volume(
 				surface_writer
 				);
 		}
-
-		return true;
 	});
 }
 
@@ -138,4 +133,8 @@ void BlockySurfaceGenerator::generate(Chunk& chunk, SurfaceWriter& surface_write
 	{
 		generate_surface_from_grid3d_volume(chunk, volume, surface_writer);
 	}
+
+	surface_writer.add_instance(SurfaceInstance{
+		.m_transform = glm::identity<glm::mat4>(),
+	});
  }

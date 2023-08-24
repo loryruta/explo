@@ -17,7 +17,8 @@ namespace explo
 	public:
 		struct WriteOp
 		{
-			std::shared_ptr<vren::vk_utils::buffer> m_staging_buffer;
+			std::shared_ptr<vren::vk_utils::buffer> m_src_buffer;
+			std::shared_ptr<vren::vk_utils::buffer> m_dst_buffer;
 			uint64_t m_src_offset;
 			uint64_t m_size;
 			uint64_t m_dst_offset;
@@ -28,14 +29,13 @@ namespace explo
 			uint64_t m_size;
 		};
 
-		enum OpType : uint32_t { OP_WRITE, OP_RESIZE };
+		enum OpType : uint32_t { OP_WRITE };
 
 		struct Op
 		{
 			OpType m_type;
 
 			WriteOp m_write;   // OP_WRITE
-			ResizeOp m_resize; // OP_RESIZE
 		};
 
 	private:
@@ -60,6 +60,7 @@ namespace explo
 
 		std::shared_ptr<vren::vk_utils::buffer> get_buffer() const { return m_buffer; }
 		size_t get_size() const { return m_size; }
+		size_t get_pending_operations_count() const { return m_operations.size(); }
 
 		void write(void* data, size_t data_size, size_t offset);
 		void resize(size_t init_size);

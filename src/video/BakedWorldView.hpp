@@ -25,6 +25,7 @@ namespace explo
 		friend class Renderer;
 		friend class BakedWorldView;
 		friend class CullWorldView;
+		friend class DebugUi;
 
 	public:
 		// The size of this struct is 8 x sizeof(uint32_t) = 8 x 4 = 32 bytes

@@ -140,6 +140,42 @@ void DebugUi::display_world_view_window()
 	ImGui::End();
 }
 
+void DebugUi::display_baked_world_view_window()
+{
+	if (!m_renderer.has_world_view()) return;
+
+	BakedWorldView& baked_world_view = m_renderer.get_world_view();
+
+	if (ImGui::Begin("Baked world view"))
+	{
+		ImGui::Text("Vertex buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+					baked_world_view.m_vertex_buffer.get_size(),
+					baked_world_view.m_vertex_buffer_allocator.get_num_allocated_pages(),
+					baked_world_view.m_vertex_buffer.get_pending_operations_count()
+					);
+
+		ImGui::Text("Index buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+					baked_world_view.m_index_buffer.get_size(),
+					baked_world_view.m_index_buffer_allocator.get_num_allocated_pages(),
+					baked_world_view.m_index_buffer.get_pending_operations_count()
+					);
+
+		ImGui::Text("Instance buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+					baked_world_view.m_instance_buffer.get_size(),
+					baked_world_view.m_instance_buffer_allocator.get_num_allocated_pages(),
+					baked_world_view.m_instance_buffer.get_pending_operations_count()
+					);
+
+		ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
+
+		auto& image_info = baked_world_view.m_circular_grid.m_image_info;
+		ImGui::Text("Render distance: %d", image_info.m_render_distance);
+		ImGui::Text("Circular grid start: (%d, %d, %d)", image_info.m_start.x, image_info.m_start.y, image_info.m_start.z);
+	}
+
+	ImGui::End();
+}
+
 void DebugUi::display_renderer_window()
 {
 	if (ImGui::Begin("Renderer"))
@@ -193,4 +229,5 @@ void DebugUi::display()
 	display_player_window();
 	display_renderer_window();
 	display_world_view_window();
+	display_baked_world_view_window();
 }

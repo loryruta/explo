@@ -29,59 +29,67 @@ void DeviceBuffer::write(void* data, size_t data_size, size_t offset)
 	std::shared_ptr<vren::vk_utils::buffer> staging_buffer = std::make_shared<vren::vk_utils::buffer>(
 		vren::vk_utils::alloc_host_visible_buffer(
 			m_renderer.m_context,
-			m_buffer_usages,
+			m_buffer_usages | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			data_size,
-			true // persistently_mapped
+			false // Persistently mapped
 			)
 		);
 
-	vren::vk_utils::immediate_transfer_queue_submit(m_renderer.m_context,
-		[&](VkCommandBuffer command_buffer, vren::resource_container& resource_container)
-		{
-			vkCmdUpdateBuffer(
-				command_buffer,
-				staging_buffer->m_buffer.m_handle,
-				offset,
-				data_size,
-				data
-				);
+	vren::vk_utils::set_name(m_renderer.m_context, *staging_buffer, "DeviceBuffer-Write-StagingBuffer");
 
-			// Add to resource_container isn't necessary because the command executes immediately
-			//resource_container.add_resource(staging_buffer);
-		});
+	void* staging_buffer_data;
+	vmaMapMemory(m_renderer.m_context.m_vma_allocator, staging_buffer->m_allocation.m_handle, &staging_buffer_data);
+	{
+		std::memcpy(staging_buffer_data, data, data_size);
+	}
+	vmaUnmapMemory(m_renderer.m_context.m_vma_allocator, staging_buffer->m_allocation.m_handle);
 
+	// Enqueue a copy operation to copy data from the staging buffer to the actual device buffer
 	Op op{};
 	op.m_type = OP_WRITE;
 
 	WriteOp& write_op = op.m_write;
-	write_op.m_staging_buffer = staging_buffer;
-	write_op.m_src_offset = offset;
+	write_op.m_src_buffer = staging_buffer;
+	write_op.m_dst_buffer = m_buffer;
+	write_op.m_src_offset = 0;
+	write_op.m_dst_offset = offset;
 	write_op.m_size = data_size;
-	write_op.m_dst_offset = 0;
 
 	m_operations.push_back(op);
 }
 
 void DeviceBuffer::resize(size_t size)
 {
-	if (size <= m_size) // If shrinking, then we don't need to allocate a new buffer
-	{
-		m_size = size;
-		return;
-	}
+	if (size <= m_size) return;
 
+	const size_t k_grow_factor = 4096; // TODO Change this in order to minimize resizes
+	size_t new_size = glm::ceil(double(size) / double(k_grow_factor)) * k_grow_factor;
+
+	std::shared_ptr<vren::vk_utils::buffer> new_buffer =
+		std::make_shared<vren::vk_utils::buffer>(create_buffer(new_size));
+
+	// Enqueue a copy operation to copy data from the old buffer to the new buffer
 	Op op{};
-	op.m_type = OP_RESIZE;
+	op.m_type = OP_WRITE;
 
-	ResizeOp& resize_op = op.m_resize;
-	resize_op.m_size = size;
+	WriteOp& write_op = op.m_write;
+	write_op.m_src_buffer = m_buffer;
+	write_op.m_dst_buffer = new_buffer;
+	write_op.m_src_offset = 0;
+	write_op.m_dst_offset = 0;
+	write_op.m_size = std::min(m_size, new_size);
 
 	m_operations.push_back(op);
+
+	// Update the state
+	m_buffer = new_buffer;
+	m_size = new_size;
 }
 
 void DeviceBuffer::record(VkCommandBuffer command_buffer, vren::resource_container& resource_container)
 {
 	// TODO IMPROVEMENT: this could be replaced with a compute shader that performs all the copies in parallel
+	// TODO we only have OP_WRITE, don't make an enum and simplify Op
 
 	for (Op const& op : m_operations)
 	{
@@ -89,9 +97,6 @@ void DeviceBuffer::record(VkCommandBuffer command_buffer, vren::resource_contain
 		{
 		case OP_WRITE:
 			perform_write(command_buffer, resource_container, op.m_write);
-			break;
-		case OP_RESIZE:
-			perform_resize(command_buffer, resource_container, op.m_resize);
 			break;
 		default:
 			throw std::runtime_error("Invalid operation type");
@@ -113,44 +118,16 @@ void DeviceBuffer::perform_write(
 
 	vkCmdCopyBuffer(
 		command_buffer,
-		write_op.m_staging_buffer->m_buffer.m_handle,
-		m_buffer->m_buffer.m_handle,
-		1,
-		&buffer_copy
+		write_op.m_src_buffer->m_buffer.m_handle, // srcBuffer
+		write_op.m_dst_buffer->m_buffer.m_handle, // dstBuffer
+		1, &buffer_copy
 		);
 
-	resource_container.add_resources(write_op.m_staging_buffer, m_buffer);
-}
-
-void DeviceBuffer::perform_resize(
-	VkCommandBuffer command_buffer,
-	vren::resource_container& resource_container,
-	ResizeOp const& resize_op
-	)
-{
-	double scale_factor = glm::ceil(double(m_size) / double(4096)); // TODO minimize resizes
-	size_t new_size = scale_factor * 4096;
-
-	std::shared_ptr<vren::vk_utils::buffer> new_buffer =
-		std::make_shared<vren::vk_utils::buffer>(create_buffer(new_size));
-
-	VkBufferCopy buffer_copy{};
-	buffer_copy.srcOffset = 0;
-	buffer_copy.dstOffset = 0;
-	buffer_copy.size = m_size;
-
-	vkCmdCopyBuffer(
-		command_buffer,
-		m_buffer->m_buffer.m_handle,
-		new_buffer->m_buffer.m_handle,
-		1,
-		&buffer_copy
+	resource_container.add_resources(
+		write_op.m_src_buffer,
+		write_op.m_dst_buffer,
+		m_buffer
 		);
-
-	resource_container.add_resources(m_buffer, new_buffer);
-
-	m_buffer = new_buffer;
-	m_size = resize_op.m_size;
 }
 
 vren::vk_utils::buffer DeviceBuffer::create_buffer(size_t size)
@@ -164,14 +141,15 @@ vren::vk_utils::buffer DeviceBuffer::create_buffer(size_t size)
 	VmaAllocationCreateInfo alloc_create_info{};
 	alloc_create_info.requiredFlags = m_memory_properties;
 
-	VkBuffer buffer;
+	VkBuffer buffer_handle;
 	VmaAllocation alloc;
 	VmaAllocationInfo alloc_info;
-	vmaCreateBuffer(m_renderer.m_context.m_vma_allocator, &buffer_info, &alloc_create_info, &buffer, &alloc, &alloc_info);
+	vmaCreateBuffer(m_renderer.m_context.m_vma_allocator, &buffer_info, &alloc_create_info, &buffer_handle, &alloc, &alloc_info);
 
-	return vren::vk_utils::buffer{
-		.m_buffer = vren::vk_buffer(m_renderer.m_context, buffer),
+	vren::vk_utils::buffer buffer = vren::vk_utils::buffer{
+		.m_buffer = vren::vk_buffer(m_renderer.m_context, buffer_handle),
 		.m_allocation = vren::vma_allocation (m_renderer.m_context, alloc),
 		.m_allocation_info = alloc_info,
-	};
+		};
+	return std::move(buffer);
 }
