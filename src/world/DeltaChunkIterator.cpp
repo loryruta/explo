@@ -1,6 +1,7 @@
 #include "DeltaChunkIterator.hpp"
 
 #include "WorldView.hpp"
+#include "log.hpp"
 #include "util/Aabb.hpp"
 
 using namespace explo;
@@ -16,56 +17,47 @@ DeltaChunkIterator::DeltaChunkIterator(
 	m_render_distance(render_distance),
 	m_callback(callback)
 {
-	m_covered.resize(WorldView::calc_size(m_render_distance));
 }
 
-void DeltaChunkIterator::iterate_recursive(glm::ivec3 const& current_chunk)
+void DeltaChunkIterator::iterate_along_axis(int axis)
 {
-	size_t world_view_size = WorldView::calc_size(m_render_distance);
+	// TODO write a unit test for this
 
-	// Make the left-bottom-back chunk in the world view be the (0, 0, 0) and right-top-front the (world_view_side, world_view_side, world_view_side)
-	glm::ivec3 rel_chunk_pos = current_chunk - m_new_center + m_render_distance;
+	assert(axis >= 0 && axis < 3);
+	assert(m_new_center[axis] != m_old_center[axis]);
 
-	uint32_t chunk_idx = WorldView::relative_position_to_index(m_render_distance, rel_chunk_pos);
-	assert(chunk_idx < world_view_size);
+	int axis_delta = m_new_center[axis] - m_old_center[axis];
+	int axis_from = glm::max(glm::abs(axis_delta) - m_render_distance, m_render_distance + 1);
+	int axis_to = glm::abs(axis_delta) + m_render_distance + 1;
 
-	if (m_covered[chunk_idx]) return;
+	int it = 0;
 
-	m_covered[chunk_idx] = true;
-	m_callback(current_chunk);
-
-	glm::ivec3 offsets[] = {
-		glm::ivec3(0, 1, 0),
-		glm::ivec3(0, -1, 0),
-		glm::ivec3(1, 0, 0),
-		glm::ivec3(-1, 0, 0),
-		glm::ivec3(0, 0, 1),
-		glm::ivec3(0, 0, -1),
-	};
-
-	Aabb old_view_box(m_old_center - m_render_distance, m_old_center + m_render_distance);
-	Aabb new_view_box(m_new_center - m_render_distance, m_new_center + m_render_distance);
-
-	for (glm::ivec3 const& offset : offsets)
+	for (int c = axis_from; c < axis_to; c++)
 	{
-		glm::ivec3 neighbor_chunk = current_chunk + offset;
+		for (int a = -m_render_distance; a <= m_render_distance; a++)
+		{
+			for (int b = -m_render_distance; b <= m_render_distance; b++)
+			{
+				glm::ivec3 chunk_pos{};
+				chunk_pos[axis] = m_old_center[axis] + c * glm::sign(axis_delta);
+				chunk_pos[(axis + 1) % 3] = m_new_center[(axis + 1) % 3] + a;
+				chunk_pos[(axis + 2) % 3] = m_new_center[(axis + 2) % 3] + b;
 
-		if (old_view_box.is_inside(neighbor_chunk))
-			continue; // The neighbor is still part of the old world view, we don't visit it
+				m_callback(chunk_pos);
 
-		if (!new_view_box.is_inside(neighbor_chunk))
-			continue; // The neighbor isn't part of the new world view, we don't visit it
-
-		iterate_recursive(neighbor_chunk);
+				it++;
+			}
+		}
 	}
+
+	//LOG_D("DeltaChunkIterator", "Step: {}, Axis: {} - Iterations: {}", axis_delta, axis, it);
 }
 
 void DeltaChunkIterator::iterate()
 {
-	if (m_old_center == m_new_center)
-		return;
-
-	// Finds an initial chunk that is part of the new world view to start the recursion from
-	glm::ivec3 initial_chunk = m_new_center + glm::sign(m_new_center - m_old_center) * m_render_distance;
-	iterate_recursive(initial_chunk);
+	for (int axis = 0; axis < 3; axis++)
+	{
+		if (m_new_center[axis] != m_old_center[axis])
+			iterate_along_axis(axis);
+	}
 }

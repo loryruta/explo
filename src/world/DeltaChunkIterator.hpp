@@ -17,8 +17,6 @@ namespace explo
 		int m_render_distance;
 		CallbackT m_callback;
 
-		std::vector<bool> m_covered;
-
 	public:
 		explicit DeltaChunkIterator(
 			glm::ivec3 const& old_center,
@@ -32,7 +30,7 @@ namespace explo
 		void iterate();
 
 	private:
-		void iterate_recursive(glm::ivec3 const& current_chunk);
+		void iterate_along_axis(int axis);
 	};
 
 } // namespace explo
