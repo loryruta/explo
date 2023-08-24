@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Game.hpp"
+#include "log.hpp"
 #include "util/JobChain.hpp"
 #include "video/RenderApi.hpp"
 
@@ -23,8 +24,7 @@ Chunk& World::load_chunk_async(glm::ivec3 const& chunk_pos, ChunkLoadedCallbackT
 	std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(*this, chunk_pos);
 	auto [iterator, inserted] = m_chunks.emplace(chunk_pos, chunk);
 
-	if (!inserted)
-		return *iterator->second.get(); // Chunk already loaded
+	if (!inserted) return *iterator->second.get(); // Chunk already loaded
 
 	generate_chunk_async(chunk, callback);
 
@@ -93,5 +93,5 @@ void World::generate_chunk_async(std::shared_ptr<Chunk> const& chunk, ChunkLoade
 
 			callback(chunk);
 		});
-	job_chain.dispatch_on_thread_pool(game().m_thread_pool);
+	job_chain.dispatch(game().m_thread_pool);
 }

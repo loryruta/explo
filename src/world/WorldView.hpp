@@ -20,7 +20,7 @@ namespace explo
 		static constexpr size_t k_max_size = k_max_side * k_max_side * k_max_side;
 
 	private:
-		World* m_world;
+		World& m_world;
 		glm::ivec3 m_position;
 		int m_render_distance;
 
@@ -44,8 +44,6 @@ namespace explo
 		glm::ivec3 get_position() const { return m_position; }
 		void offset_position(glm::ivec3 const& offset);
 		void set_position(glm::ivec3 const& chunk_pos);
-
-		void set_world(World& world, glm::ivec3 const& chunk_pos);
 
 		static int calc_side(int render_distance);
 		static size_t calc_size(int render_distance);

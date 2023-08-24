@@ -126,18 +126,16 @@ void BlockySurfaceGenerator::generate_surface_from_octree_volume(
 
 void BlockySurfaceGenerator::generate(Chunk& chunk, SurfaceWriter& surface_writer)
 {
-	std::unique_ptr<VolumeStorage> const& volume = chunk.get_volume();
+	if (!chunk.has_volume()) return;
 
-	if (!volume)
-		return;
-
+	VolumeStorage& volume = chunk.get_volume();
 	try
 	{
-		OctreeVolumeStorage& octree_volume = dynamic_cast<OctreeVolumeStorage&>(*volume);
+		OctreeVolumeStorage& octree_volume = dynamic_cast<OctreeVolumeStorage&>(volume);
 		generate_surface_from_octree_volume(chunk, octree_volume, surface_writer);
 	}
 	catch (std::bad_cast& exception)
 	{
-		generate_surface_from_grid3d_volume(chunk, *volume, surface_writer);
+		generate_surface_from_grid3d_volume(chunk, volume, surface_writer);
 	}
  }

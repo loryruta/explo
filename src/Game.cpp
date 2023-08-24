@@ -14,17 +14,9 @@ Game::Game(GLFWwindow* window) :
     /* Video */
     m_window(window)
 {
-	m_world = std::make_shared<World>(
-		m_sincos_volume_generator,
-		m_blocky_surface_generator
-		);
+	m_debug_ui = std::make_unique<DebugUi>(RenderApi::renderer());
 
-	m_player = std::make_shared<Entity>(
-		*m_world,
-		glm::vec3(0, 100, 0) /* position */
-		);;
-
-	m_entity_controller = std::make_unique<EntityController>(*m_player);
+	RenderApi::ui_draw([this]() { m_debug_ui->display(); });
 
 	glfwSetWindowUserPointer(m_window, this);
 
@@ -36,10 +28,26 @@ Game::Game(GLFWwindow* window) :
 
 	int width, height;
 	glfwGetWindowSize(m_window, &width, &height);
+
+	run_on_main_thread([this]() { late_initialize(); });
 }
 
 Game::~Game()
 {
+	RenderApi::ui_draw([]() {});
+}
+
+void Game::late_initialize()
+{
+	m_world = std::make_shared<World>(
+		m_sincos_volume_generator,
+		m_blocky_surface_generator
+	);
+
+	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 100, 0));
+	m_player_controller = std::make_unique<EntityController>(*m_player);
+
+	m_player->make_world_viewer(7 /* render_distance */);
 }
 
 void Game::run_on_main_thread(std::function<void()> const& job)
@@ -67,10 +75,10 @@ void Game::render()
 
 	m_main_thread_executor.process(); // Process main thread jobs
 
-	if (m_entity_controller->update_position())
+	if (m_player_controller->update_position())
 		RenderApi::camera_set_position(m_player->get_position());
 
-	if (m_entity_controller->update_rotation())
+	if (m_player_controller->update_rotation())
 		RenderApi::camera_set_rotation(m_player->get_yaw(), m_player->get_pitch());
 
 	RenderApi::render();

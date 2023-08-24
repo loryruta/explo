@@ -10,9 +10,7 @@ ThreadPool::ThreadPool(size_t num_threads)
 
     for (size_t thread_id = 0; thread_id < num_threads; thread_id++)
 	{
-		m_threads.emplace_back([this, thread_id] {
-		   thread_loop(thread_id);
-	   });
+		m_threads.emplace_back([this, thread_id] { thread_loop(thread_id); });
 	}
 }
 
@@ -83,7 +81,6 @@ void ThreadPool::thread_loop(size_t thread_id)
 	while (true)
 	{
 		std::function<void()> job;
-
 		{
 			std::unique_lock<std::mutex> lock(m_mutex);
 

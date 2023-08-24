@@ -15,6 +15,25 @@ Chunk::~Chunk()
 {
 }
 
+bool Chunk::has_volume() const
+{
+	std::lock_guard<std::mutex> lock(m_volume_mutex);
+	return bool(m_volume);
+}
+
+VolumeStorage& Chunk::get_volume() const
+{
+	std::lock_guard<std::mutex> lock(m_volume_mutex);
+	if (!m_volume) throw std::runtime_error("No volume");
+	return *m_volume;
+}
+
+void Chunk::set_volume(std::unique_ptr<VolumeStorage>&& volume)
+{
+	std::lock_guard<std::mutex> lock(m_volume_mutex);
+	m_volume = std::move(volume);
+}
+
 glm::vec3 Chunk::to_world_position(glm::vec3 const& chunk_relative_position) const
 {
 	return glm::vec3(m_position) * Chunk::k_world_size + chunk_relative_position;

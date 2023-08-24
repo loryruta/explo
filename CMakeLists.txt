@@ -7,8 +7,8 @@ add_library(explo_lib
     src/input/EntityController.cpp
     src/input/EntityController.hpp
 
-    src/video/debug_ui.cpp
-    src/video/debug_ui.hpp
+    src/video/DebugUi.cpp
+    src/video/DebugUi.hpp
     src/video/Renderer.cpp
     src/video/Renderer.hpp
 

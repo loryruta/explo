@@ -4,6 +4,7 @@
 #include <array>
 #include <functional>
 #include <optional>
+#include <mutex>
 
 #include <glm/glm.hpp>
 
@@ -45,7 +46,9 @@ namespace explo
 		World& m_world;
 		glm::ivec3 m_position;
 
+		mutable std::mutex m_volume_mutex;
 		std::unique_ptr<VolumeStorage> m_volume;
+
 		std::unique_ptr<Surface> m_surface;
 
 	public:
@@ -55,9 +58,11 @@ namespace explo
 		World& get_world() const { return m_world; }
 		glm::ivec3 const& get_position() const { return m_position; }
 
-		std::unique_ptr<VolumeStorage> const& get_volume() const { return m_volume; }
-		void set_volume(std::unique_ptr<VolumeStorage>&& volume) { m_volume = std::move(volume); }
+		bool has_volume() const;
+		VolumeStorage& get_volume() const;
+		void set_volume(std::unique_ptr<VolumeStorage>&& volume);
 
+		bool has_surface() const { return bool(m_surface); };
 		std::unique_ptr<Surface> const& get_surface() const { return m_surface; }
 
 		glm::uvec3 const& get_grid_size() const { return k_grid_size; }
@@ -65,9 +70,6 @@ namespace explo
 		glm::vec3 to_world_position(glm::vec3 const& chunk_relative_position) const;
 
 		uint8_t get_block_type_at(glm::ivec3 const& block) const;
-
-		/// Checks whether the chunk geometry was generated. Returns true even if the chunk geometry is under generation.
-		bool has_geometry() const;
 
 		/// Checks whether the relative block position is inside the chunk.
 		static bool is_block_inside(glm::ivec3 const& block);

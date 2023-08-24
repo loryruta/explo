@@ -29,6 +29,12 @@ namespace explo
 		explicit World(VolumeGenerator& volume_generator, SurfaceGenerator& surface_generator);
 		~World();
 
+		bool is_chunk_loaded(glm::ivec3 const& chunk_pos) const { return m_chunks.contains(chunk_pos); };
+
+		/// Gets the chunk loaded at the given position. The returned chunk shares the ownership with the World, which means the
+		/// requester could become the only owner of the chunk (e.g. in case the chunk is unloaded).
+		std::shared_ptr<Chunk> get_chunk(glm::ivec3 const& chunk_pos) { return m_chunks.at(chunk_pos); };
+
 		VolumeGenerator& get_volume_generator() const { return m_volume_generator; }
 		SurfaceGenerator& get_surface_generator() const { return m_surface_generator; }
 

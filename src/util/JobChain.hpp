@@ -10,22 +10,19 @@ namespace explo
 	class JobChain
 	{
 	public:
-		using Job = std::function<void()>;
+		using JobT = std::function<void()>;
 
 	private:
-		std::list<Job> m_jobs;
+		std::list<JobT> m_jobs;
 
 	public:
-		explicit JobChain() = default;
-		~JobChain() = default;
+		explicit JobChain();
+		~JobChain();
 
-		JobChain& then(Job const& job);
+		JobChain& then(JobT const& job);
 
-		/// Executes the chained jobs synchronously.
-		void execute() const;
-
-		/// Dispatches the chained jobs asynchronously on the given thread pool.
-		void dispatch_on_thread_pool(ThreadPool& thread_pool) const;
+		void dispatch() const;
+		void dispatch(ThreadPool& thread_pool) const;
 	};
 
 

@@ -11,11 +11,16 @@
 
 namespace explo
 {
+	// Forward decl
+	class Renderer;
+
 	/// An API used from core to perform rendering actions.
 	namespace RenderApi
 	{
 		void init(GLFWwindow* window);
 		void destroy();
+
+		Renderer& renderer();
 
 		void window_resize(uint32_t width, uint32_t height);
 		void render();
@@ -35,5 +40,10 @@ namespace explo
 		/* Block registry */
 
 		void block_registry_upload(BlockRegistry const& block_registry);
+
+		/* UI */
+
+		/// Registers a callback that displays the UI using the ImGui API.
+		void ui_draw(std::function<void()> const& callback);
 	};
 }

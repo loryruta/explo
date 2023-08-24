@@ -13,7 +13,7 @@ namespace explo
 	class Entity : public std::enable_shared_from_this<Entity>
 	{
 	private:
-		World& m_world;
+		World* m_world;
 
 		glm::vec3 m_position;
 
@@ -26,12 +26,19 @@ namespace explo
 	public:
 		inline static glm::vec3 k_camera_offset = glm::vec3(0, 2 /* Entity's height */, 0);
 
-		explicit Entity(World& world, glm::vec3 const& position = glm::vec3(0));
+		explicit Entity(World& world, glm::vec3 const& init_position = glm::vec3(0));
 		~Entity();
+
+		World& get_world() { return *m_world; };
+		void set_world(World& world, glm::vec3 const& position = glm::vec3(0));
 
 		glm::vec3 const& get_position() const { return m_position; };
 		void set_position(glm::vec3 const& position);
 
+		/// Gets the position relative to the chunk the player is in.
+		glm::vec3 get_chunk_relative_position() const;
+
+		/// Gets the position of the chunk where the player is at.
 		glm::ivec3 get_chunk_position() const;
 
 		float get_yaw() const { return m_yaw; };
@@ -44,7 +51,8 @@ namespace explo
 		glm::vec3 get_up() const;
 		glm::vec3 get_forward() const;
 
-		bool is_world_viewer() const;
+		bool has_world_view() const;
 		void make_world_viewer(int render_distance);
+		WorldView& get_world_view();
 	};
 }

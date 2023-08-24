@@ -5,7 +5,7 @@
 #include "input/EntityController.hpp"
 #include "world/BlockRegistry.hpp"
 #include "world/Entity.hpp"
-#include "video/debug_ui.hpp"
+#include "video/DebugUi.hpp"
 #include "util/SyncJobExecutor.hpp"
 #include "util/ThreadPool.hpp"
 #include "world/volume/SinCosVolumeGenerator.hpp"
@@ -20,22 +20,22 @@ namespace explo
 		SyncJobExecutor m_main_thread_executor;
 		ThreadPool m_thread_pool;
 
-        /* Input */
-        std::unique_ptr<EntityController> m_entity_controller;
-
         /* World */
 		BlockRegistry m_block_registry;
 		SinCosVolumeGenerator m_sincos_volume_generator;
 		BlockySurfaceGenerator m_blocky_surface_generator;
 
-		std::shared_ptr<World> m_world;
-		std::shared_ptr<Entity> m_player;
-
         /* Video */
         GLFWwindow* m_window;
+		std::unique_ptr<DebugUi> m_debug_ui;
 
 		float m_dt = 0.0f;
 		std::optional<float> m_last_frame_time;
+
+		/* Late initialize */
+		std::shared_ptr<World> m_world;
+		std::shared_ptr<Entity> m_player;
+		std::unique_ptr<EntityController> m_player_controller;
 
     public:
         explicit Game(GLFWwindow* window);
@@ -53,6 +53,8 @@ namespace explo
         void render();
 
 	private:
+		void late_initialize();
+
 		void on_key_change(int key, int action);
     };
 

@@ -16,6 +16,11 @@ void RenderApi::destroy()
 	s_renderer.reset();
 }
 
+Renderer& RenderApi::renderer()
+{
+	return *s_renderer;
+}
+
 void RenderApi::window_resize(uint32_t width, uint32_t height)
 {
 	s_renderer->on_window_resize(width, height);
@@ -62,4 +67,11 @@ void RenderApi::world_view_upload_chunk(glm::ivec3 const& position, Chunk const&
 void RenderApi::world_view_destroy_chunk(glm::ivec3 const& position)
 {
 	s_renderer->world_view().destroy_chunk(position);
+}
+
+/* UI */
+
+void RenderApi::ui_draw(std::function<void()> const& callback)
+{
+	s_renderer->set_ui_setup_function(callback);
 }

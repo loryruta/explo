@@ -1,5 +1,7 @@
 #include "SyncJobExecutor.hpp"
 
+#include <cassert>
+
 using namespace explo;
 
 SyncJobExecutor::SyncJobExecutor()
@@ -22,10 +24,18 @@ void SyncJobExecutor::enqueue_job(JobT const& job)
 
 void SyncJobExecutor::process()
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	// Iterates for the jobs that were enqueued just before process() was called. This not to iterate jobs that could be
+	// enqueued by a job itself
+	std::deque<JobT> jobs;
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		jobs = std::move(m_jobs);
+	}
 
-	for (JobT const& job: m_jobs)
+	for (JobT const& job : jobs)
+	{
 		job();
+	}
 
 	m_jobs.clear();
 }
