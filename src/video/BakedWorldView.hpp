@@ -74,6 +74,7 @@ namespace explo
 		friend class Renderer;
 		friend class CullWorldView;
 		friend class DrawChunkList;
+		friend class DebugUi;
 
 	public:
 		static constexpr size_t k_vertex_buffer_init_size = 64 * 1024 * 1024; // 64MB

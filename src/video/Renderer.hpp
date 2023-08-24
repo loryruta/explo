@@ -93,7 +93,8 @@ namespace explo
 
 		glm::mat4& camera_matrix() { return m_camera_matrix; }
 
-		BakedWorldView& world_view() const { return *m_baked_world_view; }
+		void recreate_world_view(int render_distance);
+		BakedWorldView& get_world_view();
 
 		void upload_block_registry(BlockRegistry const& block_registry);
 

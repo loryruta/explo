@@ -12,12 +12,14 @@ BakedWorldViewCircularGrid::BakedWorldViewCircularGrid(Renderer& renderer, int r
 	m_renderer(renderer)
 {
 	m_side = render_distance * 2 + 1;
+
 	glm::ivec3 gpu_image_size{
 		m_side * 2, // The X axis is doubled in order to store the chunk information
 		m_side,
 		m_side
 	};
 	m_gpu_image = std::make_unique<DeviceImage3d>(m_renderer, gpu_image_size, VK_FORMAT_R32G32B32A32_UINT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	m_cpu_image.resize(m_side * m_side * m_side);
 
 	m_image_info.m_start = {0, 0, 0};
 	m_image_info.m_render_distance = render_distance;
@@ -29,7 +31,14 @@ BakedWorldViewCircularGrid::~BakedWorldViewCircularGrid()
 
 BakedWorldViewCircularGrid::Pixel& BakedWorldViewCircularGrid::read_pixel(glm::ivec3 const& position)
 {
-	return m_cpu_image.at(flatten_1d_index(position));
+	assert(
+		position.x >= 0 && position.x < m_side &&
+		position.y >= 0 && position.y < m_side &&
+		position.z >= 0 && position.z < m_side
+		);
+
+	size_t i = flatten_1d_index(position);
+	return m_cpu_image.at(i);
 }
 
 void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& position, Pixel const& pixel)
@@ -103,6 +112,8 @@ void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk
 	std::unique_ptr<Surface> const& surface = chunk.m_surface;
 	assert(surface);
 
+	if (surface->m_vertices.empty() || surface->m_indices.empty() || surface->m_instances.empty()) return;
+
 	// Upload vertices
 	size_t vertex_offset;
 	size_t vertex_size = surface->m_vertices.size() * sizeof(SurfaceVertex);
@@ -141,6 +152,8 @@ void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk
 void BakedWorldView::destroy_chunk(glm::ivec3 const& position)
 {
 	BakedWorldViewCircularGrid::Pixel& pixel = m_circular_grid.read_pixel(position);
+
+	if (pixel.m_index_count == 0) return; // The pixel was invalid
 
 	m_vertex_buffer_allocator.free(pixel.m_vertex_offset);
 	m_index_buffer_allocator.free(pixel.m_first_index);

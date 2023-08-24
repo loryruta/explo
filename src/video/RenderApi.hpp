@@ -33,6 +33,7 @@ namespace explo
 
 		/* World view */
 
+		void world_view_recreate(int render_distance);
 		void world_view_shift(glm::ivec3 const& offset);
 		void world_view_upload_chunk(glm::ivec3 const& position, Chunk const& chunk);
 		void world_view_destroy_chunk(glm::ivec3 const& position);
@@ -43,7 +44,7 @@ namespace explo
 
 		/* UI */
 
-		/// Registers a callback that displays the UI using the ImGui API.
+		/// Sets a function in charge of displaying the UI using the ImGui API.
 		void ui_draw(std::function<void()> const& callback);
 	};
 }

@@ -5,9 +5,9 @@
 
 using namespace explo;
 
-VirtualAllocator::VirtualAllocator(size_t size) :
-	m_size(size)
+VirtualAllocator::VirtualAllocator(size_t size)
 {
+	resize(size);
 }
 
 VirtualAllocator::~VirtualAllocator()

@@ -66,8 +66,6 @@ Renderer::Renderer(GLFWwindow* window) :
 	m_cull_world_view(*this),
 	m_draw_chunk_list(*this)
 {
-	m_baked_world_view = std::make_unique<BakedWorldView>(*this, 5 /* render_distance */);
-
 	// Creates some dummy lights to visualize the world
 	glm::vec3* point_light_positions = m_light_array.m_point_light_position_buffer.get_mapped_pointer<glm::vec3>();
 	vren::point_light* point_lights = m_light_array.m_point_light_buffer.get_mapped_pointer<vren::point_light>();
@@ -149,6 +147,8 @@ void Renderer::on_frame(
     vren::resource_container& res_container
 )
 {
+	if (!m_baked_world_view) return;
+
 	// Barrier to ensure this frame's commands are executed only when ALL the previous commands have executed on GPU.
 	vren::vk_utils::pipeline_barrier(cmd_buf);
 
@@ -239,6 +239,17 @@ void Renderer::on_frame(
     m_render_graph_allocator.clear();
 
 	m_profile_stats.push_elapsed_time(get_nanos_since_epoch() - start_ns);
+}
+
+void Renderer::recreate_world_view(int render_distance)
+{
+	m_baked_world_view = std::make_unique<BakedWorldView>(*this, render_distance);
+}
+
+BakedWorldView& Renderer::get_world_view()
+{
+	// todo check baked_world_view exists
+	return *m_baked_world_view;
 }
 
 void Renderer::upload_block_registry(BlockRegistry const& block_registry)

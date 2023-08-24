@@ -52,7 +52,7 @@ namespace explo
 		glm::vec3 get_forward() const;
 
 		bool has_world_view() const;
-		void make_world_viewer(int render_distance);
+		WorldView& recreate_world_view(int render_distance);
 		WorldView& get_world_view();
 	};
 }

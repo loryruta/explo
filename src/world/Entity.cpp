@@ -1,5 +1,7 @@
 #include "Entity.hpp"
 
+#include "video/RenderApi.hpp"
+
 using namespace explo;
 
 Entity::Entity(World& world, glm::vec3 const& init_position) :
@@ -20,10 +22,10 @@ void Entity::set_world(World& world, glm::vec3 const& position)
 	m_world = &world;
 	m_position = position;
 
-	if (m_world_view)
+	if (m_world_view) // If the entity already had a WorldView we recreate it with the new World
 	{
 		int render_distance = m_world_view->get_render_distance();
-		m_world_view = std::make_unique<WorldView>(*m_world, get_chunk_position(), render_distance);
+		recreate_world_view(render_distance);
 	}
 }
 
@@ -89,10 +91,11 @@ bool Entity::has_world_view() const
 	return bool(m_world_view);
 }
 
-void Entity::make_world_viewer(int render_distance)
+WorldView& Entity::recreate_world_view(int render_distance)
 {
-	// TODO check has_world_view != null
 	m_world_view = std::make_unique<WorldView>(*m_world, get_chunk_position(), render_distance);
+	RenderApi::world_view_recreate(render_distance);
+	return *m_world_view;
 }
 
 WorldView& Entity::get_world_view()

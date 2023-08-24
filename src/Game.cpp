@@ -47,7 +47,7 @@ void Game::late_initialize()
 	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 100, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	m_player->make_world_viewer(7 /* render_distance */);
+	m_player->recreate_world_view(1 /* render_distance */);
 }
 
 void Game::run_on_main_thread(std::function<void()> const& job)

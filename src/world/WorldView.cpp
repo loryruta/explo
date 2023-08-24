@@ -3,12 +3,13 @@
 #include "DeltaChunkIterator.hpp"
 #include "util/JobChain.hpp"
 #include "Game.hpp"
+#include "log.hpp"
 
 using namespace explo;
 
-#define NO_WORLD_VIEW_RENDER_API
+#define CALL_RENDER_API
 
-#ifndef NO_WORLD_VIEW_RENDER_API
+#ifdef CALL_RENDER_API
 #	include "video/RenderApi.hpp"
 #endif
 
@@ -49,49 +50,40 @@ bool WorldView::is_position_inside(glm::ivec3 const& chunk_pos) const
 void WorldView::offset_position(glm::ivec3 const& offset)
 {
 	glm::ivec3 old_position = m_position;
-
 	m_position += offset;
 
-	//m_geometry_circular_grid->shift(offset);
-
+	// Destroys the chunks that went out of the WorldView
 	DeltaChunkIterator old_chunks_iterator(m_position, old_position, m_render_distance, [&](glm::ivec3 const& chunk_pos)
 	{
 		m_world.unload_chunk(chunk_pos);
 
-		// Now invalidate the references to chunks that were unloaded that, because of shifting, will be still present within the image 3d.
-		// This prevents from rendering old chunk data in the wrong world position
-
-#ifndef NO_WORLD_VIEW_RENDER_API
-		glm::ivec3 rel_position = get_relative_chunk_position(chunk_pos);
-
-		explo::run_on_main_thread([ rel_position ]()
-		{
-			RenderApi::world_view_destroy_chunk(rel_position);
-		});
+#ifdef CALL_RENDER_API
+		glm::ivec3 rel_pos = chunk_pos - old_position + m_render_distance;
+		explo::run_on_main_thread([ rel_pos ]() { RenderApi::world_view_destroy_chunk(rel_pos); });
 #endif
 	});
 	old_chunks_iterator.iterate();
 
+	// Shifts the WorldView of the offset, this has to be run _after_ the old chunks are destroyed. Since it's a circular shift,
+	// old chunks at the world view's edge, will go upfront
+#ifdef CALL_RENDER_API
+	explo::run_on_main_thread([ offset ]() { RenderApi::world_view_shift(offset); });
+#endif
+
+	// Finally we iterate the new chunks, generate them through the World and upload them for rendering
 	DeltaChunkIterator new_chunks_iterator(old_position, m_position, m_render_distance, [&](glm::ivec3 const& chunk_pos)
 	{
-		m_world.load_chunk_async(chunk_pos, [ weak_world_view = weak_from_this() ](std::shared_ptr<Chunk> const& chunk)
+		glm::ivec3 rel_pos = chunk_pos - m_position + m_render_distance;
+		m_world.load_chunk_async(chunk_pos, [ rel_pos ](std::shared_ptr<Chunk> const& chunk)
 		{
-#ifndef NO_WORLD_VIEW_RENDER_API
-			std::shared_ptr<WorldView> world_view = weak_world_view.lock();
-
-			if (!world_view)
-				return;
-
-			glm::ivec3 rel_position =
-				world_view->get_relative_chunk_position(chunk->get_position());
-
-			explo::run_on_main_thread([ rel_position, weak_chunk = std::weak_ptr(chunk) ]()
+#ifdef CALL_RENDER_API
+			explo::run_on_main_thread([ rel_pos, weak_chunk = std::weak_ptr(chunk) ]()
 			{
 				std::shared_ptr<Chunk> chunk = weak_chunk.lock();
 				if (!chunk)
 					return;
 
-				RenderApi::world_view_upload_chunk(rel_position, *chunk);
+				RenderApi::world_view_upload_chunk(rel_pos, *chunk);
 			});
 #endif
 		});

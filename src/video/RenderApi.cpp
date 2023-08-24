@@ -54,19 +54,24 @@ void RenderApi::block_registry_upload(BlockRegistry const& block_registry)
 
 /* World view */
 
+void RenderApi::world_view_recreate(int render_distance)
+{
+	s_renderer->recreate_world_view(render_distance);
+}
+
 void RenderApi::world_view_shift(glm::ivec3 const& offset)
 {
-	s_renderer->world_view().shift(offset);
+	s_renderer->get_world_view().shift(offset);
 }
 
 void RenderApi::world_view_upload_chunk(glm::ivec3 const& position, Chunk const& chunk)
 {
-	s_renderer->world_view().upload_chunk(position, chunk);
+	s_renderer->get_world_view().upload_chunk(position, chunk);
 }
 
 void RenderApi::world_view_destroy_chunk(glm::ivec3 const& position)
 {
-	s_renderer->world_view().destroy_chunk(position);
+	s_renderer->get_world_view().destroy_chunk(position);
 }
 
 /* UI */
