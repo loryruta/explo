@@ -29,7 +29,7 @@ namespace explo
 
 		void camera_set_position(glm::vec3 const& position);
 		void camera_set_rotation(float yaw, float pitch);
-		void camera_set_projection(glm::mat4 const& projection_matrix);
+		void camera_set_projection_params(float fov_y, float aspect_ratio, float near_plane, float far_plane);
 
 		/* World view */
 

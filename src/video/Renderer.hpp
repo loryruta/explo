@@ -28,7 +28,7 @@ namespace explo
 		friend class BakedWorldView;
 		friend class BakedWorldViewCircularGrid;
 		friend class CullWorldView;
-		friend class debug_ui;
+		friend class DebugUi;
 		friend class DeviceBuffer;
 		friend class DeviceImage3d;
 		friend class DrawChunkList;
@@ -57,7 +57,9 @@ namespace explo
 
 		std::function<void()> m_ui_setup_function;
 
-		glm::mat4 m_camera_matrix;
+		vren::camera m_camera;
+		glm::mat4 m_view_matrix;
+		glm::mat4 m_projection_matrix;
 
 		std::unique_ptr<BakedWorldView> m_baked_world_view;
 
@@ -75,7 +77,6 @@ namespace explo
 		static constexpr size_t k_chunk_draw_list_buffer_size = 8388608; // 8MB
 
 		VkClearColorValue m_background_color = VkClearColorValue{0.77f, 0.6f, 1.0f, 0.0f};
-		vren::camera m_camera;
 
         explicit Renderer(GLFWwindow* m_window);
         ~Renderer();
@@ -91,7 +92,16 @@ namespace explo
 			m_ui_setup_function = ui_setup_function;
 		}
 
-		glm::mat4& camera_matrix() { return m_camera_matrix; }
+		/* Camera */
+
+		void set_camera_position(glm::vec3 const& position);
+		void set_camera_rotation(float yaw, float pitch);
+		void set_camera_projection_params(float fov_y, float aspect_ratio, float near_plane, float far_plane);
+
+		void rebuild_camera_view_matrix();
+		void rebuild_camera_projection_matrix();
+
+		/* World view */
 
 		bool has_world_view() const { return bool(m_baked_world_view); }
 		void recreate_world_view(int render_distance);

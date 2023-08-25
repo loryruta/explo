@@ -38,9 +38,6 @@ namespace explo
 			uint32_t m_first_index;
 			uint32_t m_vertex_offset;
 			uint32_t m_first_instance;
-			uint32_t _pad[3];
-
-			bool is_valid() const { return m_index_count > 0; }
 		};
 
 	private:
@@ -51,9 +48,8 @@ namespace explo
 		std::unique_ptr<DeviceImage3d> m_gpu_image;
 		std::vector<Pixel> m_cpu_image;
 
-		struct { // GPU compliant
-			glm::ivec3 m_start; int m_render_distance;
-		} m_image_info;
+		glm::ivec3 m_start;
+		int m_render_distance;
 
 	public:
 		explicit BakedWorldViewCircularGrid(Renderer& renderer, int render_distance);

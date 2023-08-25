@@ -22,6 +22,7 @@ namespace explo
 		void display_world_view_window();
 		void display_baked_world_view_window();
 		void display_renderer_window();
+		void display_vma_memory_statistics();
 	};
 } // namespace explo
 

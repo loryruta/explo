@@ -9,11 +9,6 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 struct Camera
 {
     vec3 position; float _pad;
-    vec3 forward; float _pad1;
-    float fov;
-    float near_plane;
-    float far_plane;
-    float aspect_ratio;
 };
 
 layout(push_constant) uniform PushConstants
@@ -21,16 +16,6 @@ layout(push_constant) uniform PushConstants
     Camera camera;
     ivec3 world_view_start; // TODO not used ?
     int render_distance;
-};
-
-struct ChunkGeometryInfo
-{
-    uint index_count;
-    uint instance_count;
-    uint first_index;
-    uint vertex_offset;
-    uint first_instance;
-    uint _pad[3];
 };
 
 layout(set = 0, binding = 0, rgba32ui) readonly uniform uimage3D baked_world_view;
@@ -60,35 +45,21 @@ bool is_inside_world_view(ivec3 position)
     return position.x < side && position.y < side && position.z < side;
 }
 
-ChunkGeometryInfo read_chunk_geometry_info(ivec3 chunk_pos)
+DrawCall read_draw_call_at(ivec3 chunk_pos)
 {
     uvec4 i0 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1));
     uvec4 i1 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1) + ivec3(1, 0, 0));
 
-    ChunkGeometryInfo result;
-    result.index_count = i0.r;
-    result.instance_count = i0.g;
-    result.first_index = i0.b;
-    result.vertex_offset = i0.a;
-    result.first_instance = i1.r;
-    result._pad[0] = i1.g;
-    result._pad[1] = i1.b;
-    result._pad[2] = i1.a;
-    return result;
-}
-
-void add_chunk_draw_call(ChunkGeometryInfo info)
-{
-    uint cur_idx = atomicAdd(chunk_draw_list_idx, 1);
-    // TODO check if it's outside chunk draw list max capacity (~8MB)
-
     DrawCall draw_call;
-    draw_call.index_count = info.index_count;
-    draw_call.instance_count = info.instance_count;
-    draw_call.first_index = info.first_index;
-    draw_call.vertex_offset = info.vertex_offset;
-    draw_call.first_instance = info.first_instance;
-    chunk_draw_list[cur_idx] = draw_call;
+    draw_call.index_count = i0.r;
+    draw_call.instance_count = i0.g;
+    draw_call.first_index = i0.b;
+    draw_call.vertex_offset = i0.a;
+    draw_call.first_instance = i1.r;
+    // i1.g == 1
+    // i1.b == 2
+    // i1.a == 3
+    return draw_call;
 }
 
 bool test_frustum_aabb(Camera frustum, vec3 aabb_min, vec3 aabb_max)
@@ -111,7 +82,11 @@ void main()
     // If the frustum intersects the chunk's aabb then we add the chunk to the draw list
     if (test_frustum_aabb(camera, aabb_min, aabb_max))
     {
-        ChunkGeometryInfo chunk_geom_info = read_chunk_geometry_info(ivec3(gl_GlobalInvocationID));
-        add_chunk_draw_call(chunk_geom_info);
+        DrawCall draw_call = read_draw_call_at(ivec3(gl_GlobalInvocationID));
+        if (draw_call.index_count > 0) // The draw call is valid (i.e. the chunk isn't empty)
+        {
+            uint next_idx = atomicAdd(chunk_draw_list_idx, 1);
+            chunk_draw_list[next_idx] = draw_call;
+        }
     }
 }

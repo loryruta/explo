@@ -45,17 +45,15 @@ void DeviceBuffer::write(void* data, size_t data_size, size_t offset)
 	vmaUnmapMemory(m_renderer.m_context.m_vma_allocator, staging_buffer->m_allocation.m_handle);
 
 	// Enqueue a copy operation to copy data from the staging buffer to the actual device buffer
-	Op op{};
-	op.m_type = OP_WRITE;
+	// TODO this is the same as registering the copy on a secondary command buffer; we have to review vren's command_pool/command_buffer API first
+	CopyOp copy_op{};
+	copy_op.m_src_buffer = staging_buffer;
+	copy_op.m_dst_buffer = m_buffer;
+	copy_op.m_src_offset = 0;
+	copy_op.m_dst_offset = offset;
+	copy_op.m_size = data_size;
 
-	WriteOp& write_op = op.m_write;
-	write_op.m_src_buffer = staging_buffer;
-	write_op.m_dst_buffer = m_buffer;
-	write_op.m_src_offset = 0;
-	write_op.m_dst_offset = offset;
-	write_op.m_size = data_size;
-
-	m_operations.push_back(op);
+	m_operations.push_back(copy_op);
 }
 
 void DeviceBuffer::resize(size_t size)
@@ -69,17 +67,14 @@ void DeviceBuffer::resize(size_t size)
 		std::make_shared<vren::vk_utils::buffer>(create_buffer(new_size));
 
 	// Enqueue a copy operation to copy data from the old buffer to the new buffer
-	Op op{};
-	op.m_type = OP_WRITE;
+	CopyOp copy_op{};
+	copy_op.m_src_buffer = m_buffer;
+	copy_op.m_dst_buffer = new_buffer;
+	copy_op.m_src_offset = 0;
+	copy_op.m_dst_offset = 0;
+	copy_op.m_size = std::min(m_size, new_size);
 
-	WriteOp& write_op = op.m_write;
-	write_op.m_src_buffer = m_buffer;
-	write_op.m_dst_buffer = new_buffer;
-	write_op.m_src_offset = 0;
-	write_op.m_dst_offset = 0;
-	write_op.m_size = std::min(m_size, new_size);
-
-	m_operations.push_back(op);
+	m_operations.push_back(copy_op);
 
 	// Update the state
 	m_buffer = new_buffer;
@@ -91,41 +86,32 @@ void DeviceBuffer::record(VkCommandBuffer command_buffer, vren::resource_contain
 	// TODO IMPROVEMENT: this could be replaced with a compute shader that performs all the copies in parallel
 	// TODO we only have OP_WRITE, don't make an enum and simplify Op
 
-	for (Op const& op : m_operations)
-	{
-		switch (op.m_type)
-		{
-		case OP_WRITE:
-			perform_write(command_buffer, resource_container, op.m_write);
-			break;
-		default:
-			throw std::runtime_error("Invalid operation type");
-		}
-	}
+	for (CopyOp const& copy_op : m_operations) perform_copy(command_buffer, resource_container, copy_op);
+
 	m_operations.clear();
 }
 
-void DeviceBuffer::perform_write(
+void DeviceBuffer::perform_copy(
 	VkCommandBuffer command_buffer,
 	vren::resource_container& resource_container,
-	WriteOp const& write_op
+	CopyOp const& copy_op
 )
 {
 	VkBufferCopy buffer_copy{};
-	buffer_copy.srcOffset = write_op.m_src_offset;
-	buffer_copy.dstOffset = write_op.m_dst_offset;
-	buffer_copy.size = write_op.m_size;
+	buffer_copy.srcOffset = copy_op.m_src_offset;
+	buffer_copy.dstOffset = copy_op.m_dst_offset;
+	buffer_copy.size = copy_op.m_size;
 
 	vkCmdCopyBuffer(
 		command_buffer,
-		write_op.m_src_buffer->m_buffer.m_handle, // srcBuffer
-		write_op.m_dst_buffer->m_buffer.m_handle, // dstBuffer
+		copy_op.m_src_buffer->m_buffer.m_handle, // srcBuffer
+		copy_op.m_dst_buffer->m_buffer.m_handle, // dstBuffer
 		1, &buffer_copy
 		);
 
 	resource_container.add_resources(
-		write_op.m_src_buffer,
-		write_op.m_dst_buffer,
+		copy_op.m_src_buffer,
+		copy_op.m_dst_buffer,
 		m_buffer
 		);
 }

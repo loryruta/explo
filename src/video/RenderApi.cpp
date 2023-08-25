@@ -35,14 +35,17 @@ void RenderApi::render()
 
 void RenderApi::camera_set_position(glm::vec3 const& position)
 {
+	s_renderer->set_camera_position(position);
 }
 
 void RenderApi::camera_set_rotation(float yaw, float pitch)
 {
+	s_renderer->set_camera_rotation(yaw, pitch);
 }
 
-void RenderApi::camera_set_projection(glm::mat4 const& projection_matrix)
+void RenderApi::camera_set_projection_params(float fov_y, float aspect_ratio, float near_plane, float far_plane)
 {
+	s_renderer->set_camera_projection_params(fov_y, aspect_ratio, near_plane, far_plane);
 }
 
 /* Block registry */

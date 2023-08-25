@@ -9,9 +9,12 @@ using namespace explo;
 // --------------------------------------------------------------------------------------------------------------------------------
 
 BakedWorldViewCircularGrid::BakedWorldViewCircularGrid(Renderer& renderer, int render_distance) :
-	m_renderer(renderer)
+	m_renderer(renderer),
+
+	m_start{},
+	m_render_distance(render_distance)
 {
-	m_side = render_distance * 2 + 1;
+	m_side = m_render_distance * 2 + 1;
 
 	glm::ivec3 gpu_image_size{
 		m_side * 2, // The X axis is doubled in order to store the chunk information
@@ -20,9 +23,6 @@ BakedWorldViewCircularGrid::BakedWorldViewCircularGrid(Renderer& renderer, int r
 	};
 	m_gpu_image = std::make_unique<DeviceImage3d>(m_renderer, gpu_image_size, VK_FORMAT_R32G32B32A32_UINT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	m_cpu_image.resize(m_side * m_side * m_side);
-
-	m_image_info.m_start = {0, 0, 0};
-	m_image_info.m_render_distance = render_distance;
 }
 
 BakedWorldViewCircularGrid::~BakedWorldViewCircularGrid()
@@ -49,10 +49,16 @@ void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& position, Pixel c
 		position.z >= 0 && position.z < m_side
 		);
 
-	glm::ivec3 mod_position = (m_image_info.m_start + position) % m_side;
-	m_gpu_image->write_pixel(mod_position, (void*) &pixel, sizeof(pixel));
+	glm::ivec3 mod_pos = (m_start + position) % m_side;
 
-	uint32_t i = flatten_1d_index(mod_position);
+	// We split the pixel that we have to write into two pixels that lie side-by-side, along the X axis, in the final image
+	glm::uvec4 p1 = {pixel.m_index_count, pixel.m_instance_count, pixel.m_first_index, pixel.m_vertex_offset};
+	glm::uvec4 p2 = {pixel.m_first_instance, 1, 2, 3 /* Random numbers that can be useful for debug */};
+
+	m_gpu_image->write_pixel(mod_pos * glm::ivec3(2, 1, 1), &p1, sizeof(p1));
+	m_gpu_image->write_pixel(mod_pos * glm::ivec3(2, 1, 1) + glm::ivec3(1, 0, 0), &p2, sizeof(p2));
+
+	uint32_t i = flatten_1d_index(mod_pos);
 	m_cpu_image[i] = pixel;
 }
 
@@ -104,8 +110,7 @@ BakedWorldView::~BakedWorldView()
 void BakedWorldView::shift(glm::ivec3 const& offset)
 {
 	int side = m_circular_grid.m_side;
-	glm::ivec3& start = m_circular_grid.m_image_info.m_start;
-	start = (side + (start + offset) % side) % side; // Positive modulo
+	m_circular_grid.m_start = (side + (m_circular_grid.m_start + offset) % side) % side; // Positive modulo
 }
 
 void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk)

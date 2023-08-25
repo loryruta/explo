@@ -15,27 +15,13 @@ namespace explo
 	class DeviceBuffer
 	{
 	public:
-		struct WriteOp
+		struct CopyOp
 		{
 			std::shared_ptr<vren::vk_utils::buffer> m_src_buffer;
 			std::shared_ptr<vren::vk_utils::buffer> m_dst_buffer;
 			uint64_t m_src_offset;
-			uint64_t m_size;
 			uint64_t m_dst_offset;
-		};
-
-		struct ResizeOp
-		{
 			uint64_t m_size;
-		};
-
-		enum OpType : uint32_t { OP_WRITE };
-
-		struct Op
-		{
-			OpType m_type;
-
-			WriteOp m_write;   // OP_WRITE
 		};
 
 	private:
@@ -47,7 +33,7 @@ namespace explo
 		std::shared_ptr<vren::vk_utils::buffer> m_buffer;
 		size_t m_size = 0;
 
-		std::vector<Op> m_operations;
+		std::vector<CopyOp> m_operations;
 
 	public:
 		explicit DeviceBuffer(
@@ -70,16 +56,10 @@ namespace explo
 	private:
 		vren::vk_utils::buffer create_buffer(size_t size);
 
-		void perform_write(
+		void perform_copy(
 			VkCommandBuffer command_buffer,
 			vren::resource_container& resource_container,
-			WriteOp const& write_op
-			);
-
-		void perform_resize(
-			VkCommandBuffer command_buffer,
-			vren::resource_container& resource_container,
-			ResizeOp const& resize_op
+			CopyOp const& copy_op
 			);
 	};
 

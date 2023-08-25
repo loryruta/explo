@@ -241,6 +241,42 @@ void Renderer::on_frame(
 	m_profile_stats.push_elapsed_time(get_nanos_since_epoch() - start_ns);
 }
 
+/* Camera */
+
+void Renderer::set_camera_position(glm::vec3 const& position)
+{
+	m_camera.m_position = position;
+	rebuild_camera_view_matrix();
+}
+
+void Renderer::set_camera_rotation(float yaw, float pitch)
+{
+	m_camera.m_yaw = yaw;
+	m_camera.m_pitch = pitch;
+	rebuild_camera_view_matrix();
+}
+
+void Renderer::set_camera_projection_params(float fov_y, float aspect_ratio, float near_plane, float far_plane)
+{
+	m_camera.m_fov_y = fov_y;
+	m_camera.m_aspect_ratio = aspect_ratio;
+	m_camera.m_near_plane = near_plane;
+	m_camera.m_far_plane = far_plane;
+	rebuild_camera_projection_matrix();
+}
+
+void Renderer::rebuild_camera_view_matrix()
+{
+	m_view_matrix = m_camera.get_view();
+}
+
+void Renderer::rebuild_camera_projection_matrix()
+{
+	m_projection_matrix = m_camera.get_projection();
+}
+
+/* World view */
+
 void Renderer::recreate_world_view(int render_distance)
 {
 	m_baked_world_view = std::make_unique<BakedWorldView>(*this, render_distance);

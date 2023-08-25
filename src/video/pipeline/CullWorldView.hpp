@@ -15,6 +15,16 @@ namespace explo
 	/// visible. The output of this program is a list of draw-call of the visible chunks.
 	class CullWorldView
 	{
+		struct PushConstants
+		{
+			struct {
+				glm::vec3 m_position; float _pad;
+			} m_camera;
+
+			glm::ivec3 m_world_view_start;
+			int m_render_distance;
+		};
+
 	private:
 		Renderer& m_renderer;
 

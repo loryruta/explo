@@ -42,12 +42,14 @@ void Game::late_initialize()
 	m_world = std::make_shared<World>(
 		m_sincos_volume_generator,
 		m_blocky_surface_generator
-	);
+		);
 
-	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 100, 0));
+	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 10, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	m_player->recreate_world_view(3 /* render_distance */);
+	m_player->recreate_world_view(2 /* render_distance */);
+
+	RenderApi::camera_set_projection_params(90.0f, 1.0f, 0.01f, 1000.0f);
 }
 
 void Game::run_on_main_thread(std::function<void()> const& job)

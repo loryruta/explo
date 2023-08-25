@@ -148,29 +148,26 @@ void DebugUi::display_baked_world_view_window()
 
 	if (ImGui::Begin("Baked world view"))
 	{
-		ImGui::Text("Vertex buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+		ImGui::Text("Vertex buffer - Size: %zu, Allocated pages: %d",
 					baked_world_view.m_vertex_buffer.get_size(),
-					baked_world_view.m_vertex_buffer_allocator.get_num_allocated_pages(),
-					baked_world_view.m_vertex_buffer.get_pending_operations_count()
+					baked_world_view.m_vertex_buffer_allocator.get_num_allocated_pages()
 					);
 
-		ImGui::Text("Index buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+		ImGui::Text("Index buffer - Size: %zu, Allocated pages: %d",
 					baked_world_view.m_index_buffer.get_size(),
-					baked_world_view.m_index_buffer_allocator.get_num_allocated_pages(),
-					baked_world_view.m_index_buffer.get_pending_operations_count()
+					baked_world_view.m_index_buffer_allocator.get_num_allocated_pages()
 					);
 
-		ImGui::Text("Instance buffer - Size: %zu, Allocated pages: %d, Pending operations: %zu",
+		ImGui::Text("Instance buffer - Size: %zu, Allocated pages: %d",
 					baked_world_view.m_instance_buffer.get_size(),
-					baked_world_view.m_instance_buffer_allocator.get_num_allocated_pages(),
-					baked_world_view.m_instance_buffer.get_pending_operations_count()
+					baked_world_view.m_instance_buffer_allocator.get_num_allocated_pages()
 					);
 
 		ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 
-		auto& image_info = baked_world_view.m_circular_grid.m_image_info;
-		ImGui::Text("Render distance: %d", image_info.m_render_distance);
-		ImGui::Text("Circular grid start: (%d, %d, %d)", image_info.m_start.x, image_info.m_start.y, image_info.m_start.z);
+		auto& circular_grid = baked_world_view.m_circular_grid;
+		ImGui::Text("Render distance: %d", circular_grid.m_render_distance);
+		ImGui::Text("Circular grid start: (%d, %d, %d)", circular_grid.m_start.x, circular_grid.m_start.y, circular_grid.m_start.z);
 	}
 
 	ImGui::End();
@@ -223,6 +220,32 @@ void DebugUi::display_jobs_window()
 	ImGui::End();
 }
 
+void DebugUi::display_vma_memory_statistics()
+{
+	if (ImGui::Begin("Vulkan memory statistics"))
+	{
+		VmaTotalStatistics stats{};
+		vmaCalculateStatistics(m_renderer.m_context.m_vma_allocator, &stats);
+
+		VmaDetailedStatistics& detailed_stats = stats.total;
+
+		ImGui::Text("blockCount: %d", detailed_stats.statistics.blockCount);
+		ImGui::Text("allocationCount: %d", detailed_stats.statistics.allocationCount);
+		ImGui::Text("blockBytes: %zu", detailed_stats.statistics.blockBytes);
+		ImGui::Text("allocationBytes: %zu", detailed_stats.statistics.allocationBytes);
+
+		ImGui::Separator();
+
+		ImGui::Text("unusedRangeCount: %d", detailed_stats.unusedRangeCount);
+		ImGui::Text("allocationSizeMin: %zu", detailed_stats.allocationSizeMin);
+		ImGui::Text("allocationSizeMax: %zu", detailed_stats.allocationSizeMax);
+		ImGui::Text("unusedRangeSizeMin: %zu", detailed_stats.unusedRangeSizeMin);
+		ImGui::Text("unusedRangeSizeMax: %zu", detailed_stats.unusedRangeSizeMax);
+	}
+
+	ImGui::End();
+}
+
 void DebugUi::display()
 {
 	display_jobs_window();
@@ -230,4 +253,5 @@ void DebugUi::display()
 	display_renderer_window();
 	display_world_view_window();
 	display_baked_world_view_window();
+	display_vma_memory_statistics();
 }

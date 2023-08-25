@@ -26,13 +26,12 @@ void CullWorldView::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 
 	vren::context& context = m_renderer.m_context;
 	BakedWorldView& baked_world_view = *m_renderer.m_baked_world_view;
-	BakedWorldViewCircularGrid& baked_world_view_cg = baked_world_view.m_circular_grid;
+	BakedWorldViewCircularGrid& circular_grid = baked_world_view.m_circular_grid;
 
-	// Camera
-	//m_pipeline.push_constants(cmd_buf, VK_SHADER_STAGE_COMPUTE_BIT, &m_renderer.m_camera_matrix, 0); // TODO camera
-
-	// Baked world view info (i.e. start, size)
-	m_pipeline.push_constants(cmd_buf, VK_SHADER_STAGE_COMPUTE_BIT, &baked_world_view_cg.m_image_info, sizeof(m_renderer.m_camera_matrix));
+	// Push constants
+	m_pipeline.push_constants(cmd_buf, VK_SHADER_STAGE_COMPUTE_BIT, &m_renderer.m_camera.m_position, sizeof(m_renderer.m_camera.m_position), offsetof(PushConstants, m_camera));
+	m_pipeline.push_constants(cmd_buf, VK_SHADER_STAGE_COMPUTE_BIT, &circular_grid.m_start, sizeof(circular_grid.m_start), offsetof(PushConstants, m_world_view_start));
+	m_pipeline.push_constants(cmd_buf, VK_SHADER_STAGE_COMPUTE_BIT, &circular_grid.m_render_distance, sizeof(circular_grid.m_render_distance), offsetof(PushConstants, m_render_distance));
 
 	m_pipeline.acquire_and_bind_descriptor_set(context, cmd_buf, res_container, 0, [&](VkDescriptorSet descriptor_set)
 	{
@@ -41,7 +40,7 @@ void CullWorldView::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 			context,
 			descriptor_set,
 			0, // binding
-			baked_world_view_cg.m_gpu_image->get_image()->get_image_view(),
+			circular_grid.m_gpu_image->get_image()->get_image_view(),
 			VK_IMAGE_LAYOUT_GENERAL
 			);
 
@@ -67,7 +66,7 @@ void CullWorldView::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 	m_pipeline.dispatch(cmd_buf, 8, 8, 8); // todo workgroups count dynamical based on world view size
 
 	res_container.add_resources(
-		baked_world_view_cg.m_gpu_image->get_image()
+		circular_grid.m_gpu_image->get_image()
 		);
 }
 
