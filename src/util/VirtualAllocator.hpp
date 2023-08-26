@@ -10,17 +10,23 @@ namespace explo
 	/// An allocator that allows resizing of the managed memory.
 	class VirtualAllocator
 	{
-	public:
-		static constexpr size_t k_page_size = 4096;
-
 	private:
 		size_t m_size;
+		size_t m_alignment;
 
-		std::vector<bool> m_page_status;
+		size_t m_page_size;
+
+		// If the i-th entry isn't null, the i-th page is reserved. If the MSB is set it means the allocation also takes the
+		// next page
+		std::vector<uint8_t> m_page_status;
+
 		int m_num_allocated_pages = 0;
 
 	public:
-		explicit VirtualAllocator(size_t size);
+		/// \param size The initial size of the allocable space.
+		/// \param alignment Every allocation offset will be a multiple of this number (0 means not set).
+		/// \param min_page_size The actual page size will be at least this value and a multiple of alignment.
+		explicit VirtualAllocator(size_t size, size_t alignment, size_t min_page_size);
 		~VirtualAllocator();
 
 		size_t get_size() const { return m_size; }

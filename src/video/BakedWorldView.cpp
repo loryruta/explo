@@ -81,7 +81,7 @@ BakedWorldView::BakedWorldView(Renderer& renderer, int render_distance) :
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		k_vertex_buffer_init_size
 		),
-	m_vertex_buffer_allocator(k_vertex_buffer_init_size),
+	m_vertex_buffer_allocator(k_vertex_buffer_init_size, sizeof(SurfaceVertex), 128 * 1024 /* 128KB */),
 
 	m_index_buffer(
 		m_renderer,
@@ -89,7 +89,7 @@ BakedWorldView::BakedWorldView(Renderer& renderer, int render_distance) :
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		k_index_buffer_init_size
 	),
-	m_index_buffer_allocator(k_index_buffer_init_size),
+	m_index_buffer_allocator(k_index_buffer_init_size, sizeof(SurfaceIndex), 128 * 1024 /* 128KB */),
 
 	m_instance_buffer(
 		m_renderer,
@@ -97,7 +97,7 @@ BakedWorldView::BakedWorldView(Renderer& renderer, int render_distance) :
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		k_instance_buffer_init_size
 	),
-	m_instance_buffer_allocator(k_instance_buffer_init_size),
+	m_instance_buffer_allocator(k_instance_buffer_init_size, sizeof(SurfaceInstance), 1024 /* 1KB */),
 
 	m_circular_grid(renderer, render_distance)
 {
@@ -113,6 +113,26 @@ void BakedWorldView::shift(glm::ivec3 const& offset)
 	m_circular_grid.m_start = (side + (m_circular_grid.m_start + offset) % side) % side; // Positive modulo
 }
 
+size_t BakedWorldView::place_data(DeviceBuffer& buffer, VirtualAllocator& allocator, void* data, size_t data_size)
+{
+	size_t alloc_offset;
+	while (true)
+	{
+		if (allocator.allocate(data_size, alloc_offset)) break;
+
+		// If it can't allocate, try to slightly increase the buffer size
+		size_t buffer_size = glm::ceil(double(allocator.get_size()) * 1.7);
+		allocator.resize(buffer_size);
+	}
+
+	// If a resize was done, make sure the buffer size matches the virtual allocator size
+	if (buffer.get_size() != allocator.get_size())
+		buffer.resize(allocator.get_size());
+
+	buffer.write(data, data_size, alloc_offset);
+	return alloc_offset;
+}
+
 void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk)
 {
 	std::unique_ptr<Surface> const& surface = chunk.m_surface;
@@ -120,37 +140,38 @@ void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk
 
 	if (surface->m_vertices.empty() || surface->m_indices.empty() || surface->m_instances.empty()) return;
 
-	// Upload vertices
-	size_t vertex_offset;
-	size_t vertex_size = surface->m_vertices.size() * sizeof(SurfaceVertex);
-	m_vertex_buffer_allocator.allocate(vertex_size, vertex_offset);
-	if (vertex_offset + vertex_size > m_vertex_buffer.get_size()) // Resize the vertex buffer if necessary
-		m_vertex_buffer.resize(vertex_offset + vertex_size);
-	m_vertex_buffer.write(surface->m_vertices.data(), vertex_size, vertex_offset);
+	size_t vertex_offset = place_data(
+		m_vertex_buffer,
+		m_vertex_buffer_allocator,
+		surface->m_vertices.data(),
+		surface->m_vertices.size() * sizeof(SurfaceVertex)
+		);
 
-	// Upload indices
-	size_t index_offset;
-	size_t index_size = surface->m_indices.size() * sizeof(SurfaceIndex);
-	m_index_buffer_allocator.allocate(index_size, index_offset);
-	if (index_offset + index_size > m_index_buffer.get_size()) // Resize the index buffer if necessary
-		m_index_buffer.resize(index_offset + index_size);
-	m_index_buffer.write(surface->m_indices.data(), index_size, index_offset);
+	size_t index_offset = place_data(
+		m_index_buffer,
+		m_index_buffer_allocator,
+		surface->m_indices.data(),
+		surface->m_indices.size() * sizeof(SurfaceIndex)
+		);
 
-	// Upload instances
-	size_t instance_offset;
-	size_t instance_size = surface->m_instances.size() * sizeof(SurfaceInstance);
-	m_instance_buffer_allocator.allocate(instance_size, instance_offset);
-	if (instance_offset + instance_size > m_instance_buffer.get_size()) // Resize the instance buffer if necessary
-		m_instance_buffer.resize(instance_offset + instance_size);
-	m_instance_buffer.write(surface->m_instances.data(), instance_size, instance_offset);
+	size_t instance_offset = place_data(
+		m_instance_buffer,
+		m_instance_buffer_allocator,
+		surface->m_instances.data(),
+		surface->m_instances.size() * sizeof(SurfaceInstance)
+		);
 
-	// Set reference within the CircularGrid
+	// Set the chunk's draw call within the circular grid
+	assert(vertex_offset % sizeof(SurfaceVertex) == 0);
+	assert(index_offset % sizeof(SurfaceIndex) == 0);
+	assert(instance_offset % sizeof(SurfaceInstance) == 0);
+
 	BakedWorldViewCircularGrid::Pixel pixel{};
 	pixel.m_index_count = surface->m_indices.size();
 	pixel.m_instance_count = surface->m_instances.size();
-	pixel.m_first_index = index_offset;
-	pixel.m_vertex_offset = vertex_offset;
-	pixel.m_first_instance = instance_offset;
+	pixel.m_first_index = index_offset / sizeof(SurfaceIndex);
+	pixel.m_vertex_offset = vertex_offset / sizeof(SurfaceVertex);
+	pixel.m_first_instance = instance_offset / sizeof(SurfaceInstance);
 
 	m_circular_grid.write_pixel(position, pixel);
 }
@@ -161,9 +182,13 @@ void BakedWorldView::destroy_chunk(glm::ivec3 const& position)
 
 	if (pixel.m_index_count == 0) return; // The pixel was invalid
 
-	m_vertex_buffer_allocator.free(pixel.m_vertex_offset);
-	m_index_buffer_allocator.free(pixel.m_first_index);
-	m_instance_buffer_allocator.free(pixel.m_first_instance);
+	size_t vertex_offset = pixel.m_vertex_offset * sizeof(SurfaceVertex);
+	size_t index_offset = pixel.m_first_index * sizeof(SurfaceIndex);
+	size_t instance_offset = pixel.m_first_instance * sizeof(SurfaceInstance);
+
+	m_vertex_buffer_allocator.free(vertex_offset);
+	m_index_buffer_allocator.free(index_offset);
+	m_instance_buffer_allocator.free(instance_offset);
 
 	pixel.m_index_count = 0; // Invalidate the pixel
 

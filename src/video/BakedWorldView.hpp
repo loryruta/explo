@@ -106,5 +106,10 @@ namespace explo
 
 		/// Destroys the chunk that was uploaded at the given world view space position.
 		void destroy_chunk(glm::ivec3 const& position);
+
+	private:
+		/// Places the given data in the device buffer eventually re-allocating it if doesn't fit.
+		/// \return The offset, within the buffer, where the data is allocated.
+		size_t place_data(DeviceBuffer& buffer, VirtualAllocator& allocator, void* data, size_t data_size);
 	};
 } // namespace explo

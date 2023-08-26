@@ -49,6 +49,8 @@ void Game::late_initialize()
 
 	m_player->recreate_world_view(2 /* render_distance */);
 
+	RenderApi::camera_set_position(m_player->get_position());
+	RenderApi::camera_set_rotation(m_player->get_yaw(), m_player->get_pitch());
 	RenderApi::camera_set_projection_params(90.0f, 1.0f, 0.01f, 1000.0f);
 }
 

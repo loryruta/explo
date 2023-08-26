@@ -31,8 +31,9 @@ void DrawChunkList::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 		m_basic_renderer.set_instance_buffer(cmd_buf, *instance_buffer);
 
 		m_basic_renderer.set_push_constants(cmd_buf, vren::basic_renderer::push_constants{
-			.m_camera_view = {}, // TODO
-			.m_camera_projection = {}, // TODO
+			.m_camera_view = m_renderer.m_view_matrix,
+			.m_camera_projection = m_renderer.m_projection_matrix,
+			.m_material_index = 1,
 		});
 
 		vkCmdDrawIndexedIndirectCount(
