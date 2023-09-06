@@ -81,8 +81,6 @@ namespace explo
 	private:
 		Renderer& m_renderer;
 
-		int m_render_distance;
-
 		DeviceBuffer m_vertex_buffer;
 		VirtualAllocator m_vertex_buffer_allocator;
 

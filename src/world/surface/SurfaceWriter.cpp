@@ -31,7 +31,7 @@ void SurfaceWriter::add_quad(SurfaceVertex const& v0, SurfaceVertex const& v1, S
 	uint32_t i3 = add_vertex(v3);
 
 	add_index(i0); add_index(i1); add_index(i2);
-	add_index(i2); add_index(i1); add_index(i3);
+	add_index(i0); add_index(i2); add_index(i3);
 }
 
 void SurfaceWriter::add_index(uint32_t index)

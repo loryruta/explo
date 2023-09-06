@@ -47,7 +47,7 @@ void Game::late_initialize()
 	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 10, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	m_player->recreate_world_view(2 /* render_distance */);
+	m_player->recreate_world_view(1); // render_distance
 
 	RenderApi::camera_set_position(m_player->get_position());
 	RenderApi::camera_set_rotation(m_player->get_yaw(), m_player->get_pitch());

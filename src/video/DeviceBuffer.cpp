@@ -86,7 +86,8 @@ void DeviceBuffer::record(VkCommandBuffer command_buffer, vren::resource_contain
 	// TODO IMPROVEMENT: this could be replaced with a compute shader that performs all the copies in parallel
 	// TODO we only have OP_WRITE, don't make an enum and simplify Op
 
-	for (CopyOp const& copy_op : m_operations) perform_copy(command_buffer, resource_container, copy_op);
+	for (CopyOp const& copy_op : m_operations)
+		perform_copy(command_buffer, resource_container, copy_op);
 
 	m_operations.clear();
 }

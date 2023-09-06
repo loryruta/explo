@@ -1,5 +1,7 @@
 #include "Renderer.hpp"
 
+#include <fstream>
+
 #include <GLFW/glfw3.h>
 #include <imgui_impl_glfw.h>
 
@@ -66,21 +68,13 @@ Renderer::Renderer(GLFWwindow* window) :
 	m_cull_world_view(*this),
 	m_draw_chunk_list(*this)
 {
-	// Creates some dummy lights to visualize the world
-	glm::vec3* point_light_positions = m_light_array.m_point_light_position_buffer.get_mapped_pointer<glm::vec3>();
-	vren::point_light* point_lights = m_light_array.m_point_light_buffer.get_mapped_pointer<vren::point_light>();
+	vren::directional_light* directional_lights =
+		m_light_array.m_directional_light_buffer.get_mapped_pointer<vren::directional_light>();
 
-	const size_t num_point_lights = 64;
+	directional_lights[0].m_direction = glm::vec3(0.707f, -0.707f,  0.);
+	directional_lights[0].m_color = glm::vec3(1.0f);
 
-	for (size_t i = 0; i < num_point_lights; i++)
-	{
-		point_light_positions[i] = glm::vec3(0, i * 2.0f, 0);
-
-		point_lights[i].m_color = glm::vec3(1.0f);
-		point_lights[i].m_intensity = 100.0f;
-	}
-
-	m_light_array.m_point_light_count = num_point_lights;
+	m_light_array.m_directional_light_count = 1;
 }
 
 Renderer::~Renderer()
@@ -139,6 +133,8 @@ void Renderer::flush_device_buffer_operations(VkCommandBuffer cmd_buf, vren::res
 	m_baked_world_view->m_circular_grid.m_gpu_image->record(cmd_buf, res_container);
 }
 
+static bool g_render_graph_dump_taken = false;
+
 void Renderer::on_frame(
     uint32_t frame_idx,
     uint32_t swapchain_image_idx,
@@ -149,12 +145,12 @@ void Renderer::on_frame(
 {
 	if (!m_baked_world_view) return;
 
-	// Barrier to ensure this frame's commands are executed only when ALL the previous commands have executed on GPU.
+	// Barrier to ensure this frame's commands are executed only when ALL the previous commands have executed on GPU
 	vren::vk_utils::pipeline_barrier(cmd_buf);
 
 	// Records the host-conducted operations on device buffers; then place barriers to synchronize them with the render-graph
 	// execution. This can't be a render-graph node because operations can potentially change buffers (e.g. resize), and render-graph
-	// executor wouldn't be able to place barriers.
+	// executor wouldn't be able to place barriers
 	flush_device_buffer_operations(cmd_buf, res_container);
 
 	vren::vk_utils::pipeline_barrier(cmd_buf, *m_baked_world_view->m_vertex_buffer.get_buffer());
@@ -175,11 +171,7 @@ void Renderer::on_frame(
 
     VkImage output = swapchain.m_images.at(swapchain_image_idx);
 
-	res_container.add_resources(
-        m_color_buffer,
-        m_depth_buffer,
-        m_gbuffer
-    );
+	res_container.add_resources(m_color_buffer, m_depth_buffer, m_gbuffer);
 
     // Clears color buffer
     render_graph.concat(vren::clear_color_buffer(m_render_graph_allocator, m_color_buffer->get_image(), m_background_color));
@@ -204,7 +196,7 @@ void Renderer::on_frame(
 			m_camera,
             *m_gbuffer,
             *m_depth_buffer,
-            m_light_array, // TODO: Now there are no lights :(
+            m_light_array,
             m_material_buffer,
             *m_color_buffer
         )
@@ -235,6 +227,15 @@ void Renderer::on_frame(
     // Records the render-graph on the command buffer that is eventually submitted
     vren::render_graph_executor executor(frame_idx, cmd_buf, res_container);
     executor.execute(m_render_graph_allocator, render_graph.get_head());
+
+	if (!g_render_graph_dump_taken)
+	{
+		std::ofstream of("./render_graph.dot");
+		vren::render_graph_dumper dumper(of);
+		dumper.dump(m_render_graph_allocator, render_graph.get_head());
+
+		g_render_graph_dump_taken = true;
+	}
 
     m_render_graph_allocator.clear();
 
@@ -300,9 +301,7 @@ void Renderer::upload_block_registry(BlockRegistry const& block_registry)
 		image_data.reserve(block_registry.size());
 
 		for (BlockData const& block_data : block_registry.get_block_data())
-		{
 			image_data.push_back(block_data.m_color);
-		}
 
 		vren::vk_utils::texture texture = vren::vk_utils::create_texture(
 			m_context,
@@ -317,7 +316,6 @@ void Renderer::upload_block_registry(BlockRegistry const& block_registry)
 			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			VK_SAMPLER_ADDRESS_MODE_REPEAT
 		);
-
 		texture_manager.m_textures.push_back(std::move(texture));
 
 		LOG_D("upload_block_registry", "Texture uploaded and registered in texture manager");

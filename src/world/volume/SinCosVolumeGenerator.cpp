@@ -6,16 +6,25 @@ using namespace explo;
 
 void SinCosVolumeGenerator::generate_volume(Chunk& chunk)
 {
-	if (chunk.get_position().y == 0)
+	std::unique_ptr<OctreeVolumeStorage> volume = std::make_unique<OctreeVolumeStorage>(chunk.get_grid_size());
+
+	// TODO make a chunk iterator utility?
+	for (int x = 0; x < Chunk::k_grid_size.x; x++)
 	{
-		std::unique_ptr<OctreeVolumeStorage> volume = std::make_unique<OctreeVolumeStorage>(chunk.get_grid_size());
-		for (int x = 0; x < Chunk::k_grid_size.x; x++)
+		for (int z = 0; z < Chunk::k_grid_size.z; z++)
 		{
-			for (int z = 0; z < Chunk::k_grid_size.z; z++)
+			glm::ivec3 block_pos = chunk.to_world_block_position(glm::ivec3{x, 0, z});
+			block_pos.y = glm::floor(
+				((glm::sin(block_pos.x * 0.01f) + 1.0f) / 2.0f) *
+				((glm::cos(block_pos.z * 0.01f) + 1.0f) / 2.0f) *
+				100.0f
+				);
+
+			if (chunk.test_block_position(block_pos))
 			{
-				volume->set_block_type_at(glm::ivec3(x, 0, z), 1);
+				volume->set_block_type_at(chunk.to_chunk_position(block_pos), 1 /* block_type */);
 			}
 		}
-		chunk.set_volume(std::move(volume));
 	}
+	chunk.set_volume(std::move(volume));
 }

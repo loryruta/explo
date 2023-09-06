@@ -14,7 +14,7 @@ struct Camera
 layout(push_constant) uniform PushConstants
 {
     Camera camera;
-    ivec3 world_view_start; // TODO not used ?
+    ivec3 view_start;
     int render_distance;
 };
 
@@ -47,8 +47,12 @@ bool is_inside_world_view(ivec3 position)
 
 DrawCall read_draw_call_at(ivec3 chunk_pos)
 {
-    uvec4 i0 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1));
-    uvec4 i1 = imageLoad(baked_world_view, chunk_pos * ivec3(2, 1, 1) + ivec3(1, 0, 0));
+    // Apply the circular grid shift here before accessing the actual image data
+    int view_side = render_distance * 2 + 1;
+    ivec3 view_idx = (chunk_pos + view_start) % view_side;
+
+    uvec4 i0 = imageLoad(baked_world_view, view_idx * ivec3(2, 1, 1));  // We store the data on two adjacent pixels (along X)
+    uvec4 i1 = imageLoad(baked_world_view, view_idx * ivec3(2, 1, 1) + ivec3(1, 0, 0));
 
     DrawCall draw_call;
     draw_call.index_count = i0.r;

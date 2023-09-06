@@ -1,6 +1,5 @@
 #include "DeltaChunkIterator.hpp"
 
-#include "WorldView.hpp"
 #include "log.hpp"
 #include "util/Aabb.hpp"
 
@@ -21,8 +20,6 @@ DeltaChunkIterator::DeltaChunkIterator(
 
 void DeltaChunkIterator::iterate_along_axis(int axis)
 {
-	// TODO write a unit test for this
-
 	assert(axis >= 0 && axis < 3);
 	assert(m_new_center[axis] != m_old_center[axis]);
 
@@ -49,8 +46,6 @@ void DeltaChunkIterator::iterate_along_axis(int axis)
 			}
 		}
 	}
-
-	//LOG_D("DeltaChunkIterator", "Step: {}, Axis: {} - Iterations: {}", axis_delta, axis, it);
 }
 
 void DeltaChunkIterator::iterate()

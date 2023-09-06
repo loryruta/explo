@@ -29,6 +29,12 @@ namespace explo
 		return a - pi;
 	}
 
+	template<typename _T>
+	_T pmod(_T i, _T n)
+	{
+		return (i % n + n) % n;
+	}
+
 	/// Converts the given byte size to a human readable string (e.g. 567296 -> 554Kb)
 	std::string stringify_byte_size(size_t byte_size);
 

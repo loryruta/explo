@@ -33,7 +33,7 @@ void DrawChunkList::record(VkCommandBuffer cmd_buf, vren::resource_container& re
 		m_basic_renderer.set_push_constants(cmd_buf, vren::basic_renderer::push_constants{
 			.m_camera_view = m_renderer.m_view_matrix,
 			.m_camera_projection = m_renderer.m_projection_matrix,
-			.m_material_index = 1,
+			.m_material_index = 0,
 		});
 
 		vkCmdDrawIndexedIndirectCount(
@@ -63,13 +63,30 @@ vren::render_graph_t DrawChunkList::create_render_graph_node(vren::render_graph_
 	node->set_src_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	node->set_dst_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle, }, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
-	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle, }, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
-	node->add_buffer({ .m_buffer = baked_world_view.m_vertex_buffer.get_buffer()->m_buffer.m_handle, }, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
-	node->add_buffer({ .m_buffer = baked_world_view.m_instance_buffer.get_buffer()->m_buffer.m_handle, }, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
-	node->add_buffer({ .m_buffer = baked_world_view.m_index_buffer.get_buffer()->m_buffer.m_handle, }, VK_ACCESS_INDEX_READ_BIT);
+	node->add_buffer({
+		.m_name = "chunk_draw_list",
+		.m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle,
+	}, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+	node->add_buffer({
+		.m_name = "chunk_draw_list_idx",
+		.m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle,
+	}, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+	node->add_buffer({
+		.m_name = "vertex_buffer",
+		.m_buffer = baked_world_view.m_vertex_buffer.get_buffer()->m_buffer.m_handle,
+	}, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	node->add_buffer({
+		.m_name = "instance_buffer",
+		.m_buffer = baked_world_view.m_instance_buffer.get_buffer()->m_buffer.m_handle,
+	}, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	node->add_buffer({
+		.m_name = "index_buffer",
+		.m_buffer = baked_world_view.m_index_buffer.get_buffer()->m_buffer.m_handle,
+	}, VK_ACCESS_INDEX_READ_BIT);
 	m_renderer.m_gbuffer->add_render_graph_node_resources(*node, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+
 	node->add_image({
+		.m_name = "depth_buffer",
 		.m_image = m_renderer.m_depth_buffer->get_image(),
 		.m_image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT,
 	}, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);

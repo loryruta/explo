@@ -73,7 +73,6 @@ size_t BakedWorldViewCircularGrid::flatten_1d_index(glm::ivec3 const& position) 
 
 BakedWorldView::BakedWorldView(Renderer& renderer, int render_distance) :
 	m_renderer(renderer),
-	m_render_distance(render_distance),
 
 	m_vertex_buffer(
 		m_renderer,
@@ -110,7 +109,7 @@ BakedWorldView::~BakedWorldView()
 void BakedWorldView::shift(glm::ivec3 const& offset)
 {
 	int side = m_circular_grid.m_side;
-	m_circular_grid.m_start = (side + (m_circular_grid.m_start + offset) % side) % side; // Positive modulo
+	m_circular_grid.m_start = pmod(m_circular_grid.m_start + offset, glm::ivec3(side));
 }
 
 size_t BakedWorldView::place_data(DeviceBuffer& buffer, VirtualAllocator& allocator, void* data, size_t data_size)

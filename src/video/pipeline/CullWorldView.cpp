@@ -76,14 +76,24 @@ vren::render_graph_t CullWorldView::create_render_graph_node(vren::render_graph_
 	node->set_name("CullWorldView");
 	node->set_src_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	node->set_dst_stage(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle, }, VK_ACCESS_SHADER_WRITE_BIT);
-	node->add_buffer({ .m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle, }, VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+
+	node->add_buffer({
+		.m_name = "chunk_draw_list",
+		.m_buffer = m_renderer.m_chunk_draw_list.m_buffer.m_handle,
+	}, VK_ACCESS_SHADER_WRITE_BIT);
+	node->add_buffer({
+		.m_name = "chunk_draw_list_idx",
+		.m_buffer = m_renderer.m_chunk_draw_list_idx.m_buffer.m_handle,
+	}, VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT);
+
 	node->add_image({
+		.m_name = "baked_world_view-circular_grid",
 		.m_image = m_renderer.m_baked_world_view->m_circular_grid.m_gpu_image->get_image()->get_image(),
 		.m_image_aspect = VK_IMAGE_ASPECT_COLOR_BIT,
 		.m_mip_level = 0,
 		.m_layer = 0,
 	}, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT);
+
 	node->set_callback([this](uint32_t frame_idx, VkCommandBuffer cmd_buf, vren::resource_container& res_container)
 	{
 		record(cmd_buf, res_container);
