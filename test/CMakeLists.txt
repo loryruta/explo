@@ -1,5 +1,11 @@
 add_executable(explo_test
-    main.cpp OctreeVolumeStorageTest.cpp)
+    main.cpp
+    OctreeVolumeStorageTest.cpp
+    MiscTest.cpp
+    DeltaChunkIteratorTest.cpp
+    )
+
+# ------------------------------------------------------------------------------------------------ Dependencies
 
 # explo_lib
 target_link_libraries(explo_test PRIVATE explo_lib)
