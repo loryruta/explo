@@ -49,6 +49,9 @@ Renderer::Renderer(GLFWwindow* window) :
 		.m_shutdown_callback  = []() { ImGui_ImplGlfw_Shutdown(); }
 	}),
 
+	m_debug_draw_buffer(m_context),
+	m_debug_renderer(m_context),
+
     m_light_array(m_context),
     m_material_buffer(m_context),
 
@@ -202,6 +205,29 @@ void Renderer::on_frame(
         )
     );
 
+	m_debug_draw_buffer.clear();
+
+	m_debug_draw_buffer.add_cube({
+		.m_min = glm::vec3(m_baked_world_view->m_position - m_baked_world_view->m_render_distance) * Chunk::k_world_size,
+		.m_max = glm::vec3(m_baked_world_view->m_position + m_baked_world_view->m_render_distance + 1) * Chunk::k_world_size,
+		.m_color = 0xFFFF0000,
+	});
+
+	// Draw debug lines
+	render_graph.concat(
+		m_debug_renderer.render(
+			m_render_graph_allocator,
+			render_target,
+			vren::camera_data{
+				.m_position = m_camera.m_position,
+				.m_view = m_camera.get_view(),
+				.m_projection = m_camera.get_projection(),
+				.m_z_near = m_camera.m_near_plane
+			},
+			m_debug_draw_buffer,
+			true
+			));
+
 	// Renders UI
 	if (m_ui_setup_function)
 	{
@@ -278,9 +304,9 @@ void Renderer::rebuild_camera_projection_matrix()
 
 /* World view */
 
-void Renderer::recreate_world_view(int render_distance)
+void Renderer::recreate_world_view(glm::ivec3 const& init_position, int render_distance)
 {
-	m_baked_world_view = std::make_unique<BakedWorldView>(*this, render_distance);
+	m_baked_world_view = std::make_unique<BakedWorldView>(*this, init_position, render_distance);
 }
 
 BakedWorldView& Renderer::get_world_view()

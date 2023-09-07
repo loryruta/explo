@@ -6,6 +6,7 @@
 
 #include "log.hpp"
 #include "Game.hpp"
+#include "GlfwWindow.hpp"
 
 using namespace explo;
 
@@ -31,52 +32,35 @@ int main(int argc, char* argv[])
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
-	LOG_I("", "GLFW initialized");
-
-	// Create GLFW window
-	GLFWwindow* window = glfwCreateWindow(720, 720, "explo", nullptr, nullptr);
-	if (window == nullptr)
-	{
-		fprintf(stderr, "Failed to create window\n");
-		exit(1);
-	}
-
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	LOG_I("", "Window initialized");
-
 	/* */
 
-	explo::init(window);
+	std::unique_ptr<GlfwWindow> window = GlfwWindow::create(100, 100, "explo");
+	explo::init(*window);
 
-	int last_framebuffer_width = -1,
-		last_framebuffer_height = -1;
+	glm::ivec2 last_window_size = glm::ivec2(-1);
 
-	while (!glfwWindowShouldClose(window))
+	while (window->is_opened())
 	{
 		glfwPollEvents();
 
-		// Handle resize
-		int framebuffer_width, framebuffer_height;
-		glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+		glm::ivec2 window_size = window->get_size(); // Handle resize
 
-		if (framebuffer_width != last_framebuffer_width || framebuffer_height != last_framebuffer_height)
+		if (window_size.x != last_window_size.x || window_size.y != last_window_size.y)
 		{
-			explo::game().on_window_resize(framebuffer_width, framebuffer_height);
+			explo::game().on_window_resize(window_size.x, window_size.y);
 
-			last_framebuffer_width = framebuffer_width;
-			last_framebuffer_height = framebuffer_height;
+			last_window_size.x = window_size.x;
+			last_window_size.y = window_size.y;
 		}
 
 		explo::render();
 	}
 
 	explo::shutdown();
+	window.reset();
 
-	/* */
 	LOG_I("", "Bye bye!");
 
-	glfwDestroyWindow(window);
 	glfwTerminate();
 
 	return 0;

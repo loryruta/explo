@@ -27,8 +27,6 @@ void DeltaChunkIterator::iterate_along_axis(int axis)
 	int axis_from = glm::max(glm::abs(axis_delta) - m_render_distance, m_render_distance + 1);
 	int axis_to = glm::abs(axis_delta) + m_render_distance + 1;
 
-	int it = 0;
-
 	for (int c = axis_from; c < axis_to; c++)
 	{
 		for (int a = -m_render_distance; a <= m_render_distance; a++)
@@ -40,9 +38,11 @@ void DeltaChunkIterator::iterate_along_axis(int axis)
 				chunk_pos[(axis + 1) % 3] = m_new_center[(axis + 1) % 3] + a;
 				chunk_pos[(axis + 2) % 3] = m_new_center[(axis + 2) % 3] + b;
 
-				m_callback(chunk_pos);
-
-				it++;
+				if (!m_visited_chunks.contains(chunk_pos))
+				{
+					m_callback(chunk_pos);
+					m_visited_chunks.emplace(chunk_pos);
+				}
 			}
 		}
 	}

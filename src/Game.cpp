@@ -1,12 +1,10 @@
 #include "Game.hpp"
 
-#include <GLFW/glfw3.h>
-
 #include "video/RenderApi.hpp"
 
 using namespace explo;
 
-Game::Game(GLFWwindow* window) :
+Game::Game(GlfwWindow& window) :
 	/* Misc utils */
 	m_main_thread_executor{},
 	m_thread_pool(std::thread::hardware_concurrency()),
@@ -18,16 +16,13 @@ Game::Game(GLFWwindow* window) :
 
 	RenderApi::ui_draw([this]() { m_debug_ui->display(); });
 
-	glfwSetWindowUserPointer(m_window, this);
+	glfwSetWindowUserPointer(m_window.handle(), this);
 
-	glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+	glfwSetKeyCallback(m_window.handle(), [](GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
 		game->on_key_change(key, action);
 	});
-
-	int width, height;
-	glfwGetWindowSize(m_window, &width, &height);
 
 	run_on_main_thread([this]() { late_initialize(); });
 }
@@ -47,7 +42,8 @@ void Game::late_initialize()
 	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 10, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	m_player->recreate_world_view(1); // render_distance
+	const int k_render_distance = 5;
+	m_player->recreate_world_view(k_render_distance);
 
 	RenderApi::camera_set_position(m_player->get_position());
 	RenderApi::camera_set_rotation(m_player->get_yaw(), m_player->get_pitch());
@@ -93,16 +89,15 @@ void Game::on_key_change(int key, int action)
 	// Cursor logic
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
-		if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
-			glfwSetWindowShouldClose(m_window, true);
-		} else if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
-			glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		if (m_window.is_cursor_disabled())
+		{
+			m_window.enable_cursor();
 		}
+		else m_window.close();
 	}
 	else if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
 	{
-		if (glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
-			glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		if (!m_window.is_cursor_disabled()) m_window.disable_cursor();
 	}
 }
 
@@ -110,9 +105,9 @@ void Game::on_key_change(int key, int action)
 
 std::unique_ptr<Game> s_game;
 
-void explo::init(GLFWwindow* window)
+void explo::init(GlfwWindow& window)
 {
-	RenderApi::init(window);
+	RenderApi::init(window.handle());
 
 	s_game = std::make_unique<Game>(window);
 }

@@ -51,6 +51,8 @@ add_library(explo_lib
     src/Game.cpp
     src/Game.hpp
     src/log.hpp
+    src/GlfwWindow.hpp
+    src/GlfwWindow.cpp
 
     src/util/VirtualAllocator.cpp
     src/util/VirtualAllocator.hpp
@@ -69,7 +71,10 @@ add_library(explo_lib
     src/util/JobChain.cpp
     src/video/pipeline/CullWorldView.hpp
     src/video/pipeline/CullWorldView.cpp
-    src/video/pipeline/DrawChunkList.hpp src/video/pipeline/DrawChunkList.cpp src/util/Aabb.cpp)
+    src/video/pipeline/DrawChunkList.hpp
+    src/video/pipeline/DrawChunkList.cpp
+    src/util/Aabb.cpp
+    )
 
 target_include_directories(explo_lib PUBLIC "./src/")
 
@@ -89,6 +94,7 @@ include("external/vren/VRen.cmake")
 
 setup_resources(explo_lib)
 
+# TODO create a function for explo resources so that explo, explo_test can use same code
 compile_shader(SHADERS "${CMAKE_CURRENT_LIST_DIR}/resources/shaders/cull_world_view.comp" "${CMAKE_CURRENT_BINARY_DIR}/resources/shaders/cull_world_view.comp.spv")
 
 add_custom_target(explo_shaders DEPENDS ${SHADERS})

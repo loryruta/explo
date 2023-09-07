@@ -29,50 +29,62 @@ BakedWorldViewCircularGrid::~BakedWorldViewCircularGrid()
 {
 }
 
-BakedWorldViewCircularGrid::Pixel& BakedWorldViewCircularGrid::read_pixel(glm::ivec3 const& position)
+glm::ivec3 BakedWorldViewCircularGrid::to_image_index(glm::ivec3 const& pos) const
 {
-	assert(
-		position.x >= 0 && position.x < m_side &&
-		position.y >= 0 && position.y < m_side &&
-		position.z >= 0 && position.z < m_side
-		);
-
-	size_t i = flatten_1d_index(position);
-	return m_cpu_image.at(i);
+	return (m_start + pos) % m_side;
 }
 
-void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& position, Pixel const& pixel)
+size_t BakedWorldViewCircularGrid::to_flatten_index(glm::ivec3 const& pos) const
+{
+	glm::ivec3 mod_pos = to_image_index(pos);
+	return mod_pos.y * (m_side * m_side) + mod_pos.x * m_side + mod_pos.z;
+}
+
+BakedWorldViewCircularGrid::Pixel& BakedWorldViewCircularGrid::read_pixel(glm::ivec3 const& pos)
 {
 	assert(
-		position.x >= 0 && position.x < m_side &&
-		position.y >= 0 && position.y < m_side &&
-		position.z >= 0 && position.z < m_side
+		pos.x >= 0 && pos.x < m_side &&
+		pos.y >= 0 && pos.y < m_side &&
+		pos.z >= 0 && pos.z < m_side
 		);
 
-	glm::ivec3 mod_pos = (m_start + position) % m_side;
+	return m_cpu_image.at(to_flatten_index(pos));
+}
+
+void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& pos, Pixel const& pixel)
+{
+	assert(
+		pos.x >= 0 && pos.x < m_side &&
+		pos.y >= 0 && pos.y < m_side &&
+		pos.z >= 0 && pos.z < m_side
+		);
+
 
 	// We split the pixel that we have to write into two pixels that lie side-by-side, along the X axis, in the final image
 	glm::uvec4 p1 = {pixel.m_index_count, pixel.m_instance_count, pixel.m_first_index, pixel.m_vertex_offset};
 	glm::uvec4 p2 = {pixel.m_first_instance, 1, 2, 3 /* Random numbers that can be useful for debug */};
 
-	m_gpu_image->write_pixel(mod_pos * glm::ivec3(2, 1, 1), &p1, sizeof(p1));
-	m_gpu_image->write_pixel(mod_pos * glm::ivec3(2, 1, 1) + glm::ivec3(1, 0, 0), &p2, sizeof(p2));
+	glm::ivec3 img_idx = to_image_index(pos);
 
-	uint32_t i = flatten_1d_index(mod_pos);
-	m_cpu_image[i] = pixel;
-}
+	m_gpu_image->write_pixel(img_idx * glm::ivec3(2, 1, 1), &p1, sizeof(p1));
+	m_gpu_image->write_pixel(img_idx * glm::ivec3(2, 1, 1) + glm::ivec3(1, 0, 0), &p2, sizeof(p2));
 
-size_t BakedWorldViewCircularGrid::flatten_1d_index(glm::ivec3 const& position) const
-{
-	return position.y * m_side * m_side + position.x * m_side + position.z;
+	m_cpu_image[to_flatten_index(pos)] = pixel;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // BakedWorldView
 // --------------------------------------------------------------------------------------------------------------------------------
 
-BakedWorldView::BakedWorldView(Renderer& renderer, int render_distance) :
+BakedWorldView::BakedWorldView(
+	Renderer& renderer,
+	glm::ivec3 const& init_position,
+	int render_distance
+	) :
 	m_renderer(renderer),
+
+	m_position(init_position),
+	m_render_distance(render_distance),
 
 	m_vertex_buffer(
 		m_renderer,
@@ -106,10 +118,19 @@ BakedWorldView::~BakedWorldView()
 {
 }
 
-void BakedWorldView::shift(glm::ivec3 const& offset)
+bool BakedWorldView::is_chunk_position_inside(glm::ivec3 const& chunk_pos) const
 {
-	int side = m_circular_grid.m_side;
-	m_circular_grid.m_start = pmod(m_circular_grid.m_start + offset, glm::ivec3(side));
+	int side = m_render_distance * 2 + 1;
+	glm::ivec3 rel_pos = to_relative_chunk_position(chunk_pos);
+	return
+		rel_pos.x >= 0 && rel_pos.x < side &&
+		rel_pos.y >= 0 && rel_pos.y < side &&
+		rel_pos.z >= 0 && rel_pos.z < side;
+}
+
+glm::ivec3 BakedWorldView::to_relative_chunk_position(glm::ivec3 const& chunk_pos) const
+{
+	return chunk_pos - m_position + m_render_distance;
 }
 
 size_t BakedWorldView::place_data(DeviceBuffer& buffer, VirtualAllocator& allocator, void* data, size_t data_size)
@@ -132,12 +153,32 @@ size_t BakedWorldView::place_data(DeviceBuffer& buffer, VirtualAllocator& alloca
 	return alloc_offset;
 }
 
-void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk)
+void BakedWorldView::set_position(glm::ivec3 const& new_position)
 {
-	std::unique_ptr<Surface> const& surface = chunk.m_surface;
-	assert(surface);
+	glm::ivec3 offset = new_position - m_position;
 
-	if (surface->m_vertices.empty() || surface->m_indices.empty() || surface->m_instances.empty()) return;
+	int side = m_circular_grid.m_side;
+	m_circular_grid.m_start = pmod(m_circular_grid.m_start + offset, glm::ivec3(side));
+
+	m_position = new_position;
+}
+
+void BakedWorldView::upload_chunk(Chunk const& chunk)
+{
+	// The user asked to upload a chunk that is outside the world view. This can happen frequently because the chunk construction
+	// is asynchronous and if the player is travelling through the world fast, chunks could be built when they're no longer inside
+	// the world view
+	glm::ivec3 chunk_pos = chunk.get_position();
+	if (!is_chunk_position_inside(chunk_pos)) return;
+
+	std::unique_ptr<Surface> const& surface = chunk.m_surface;
+
+	// The chunk doesn't have the surface! Instead of throwing, we silently ignore the uploading
+	if (!surface ||
+		surface->m_vertices.empty() ||
+		surface->m_indices.empty() ||
+		surface->m_instances.empty()
+		) return;
 
 	size_t vertex_offset = place_data(
 		m_vertex_buffer,
@@ -172,12 +213,19 @@ void BakedWorldView::upload_chunk(glm::ivec3 const& position, Chunk const& chunk
 	pixel.m_vertex_offset = vertex_offset / sizeof(SurfaceVertex);
 	pixel.m_first_instance = instance_offset / sizeof(SurfaceInstance);
 
-	m_circular_grid.write_pixel(position, pixel);
+	m_circular_grid.write_pixel(to_relative_chunk_position(chunk_pos), pixel);
 }
 
-void BakedWorldView::destroy_chunk(glm::ivec3 const& position)
+void BakedWorldView::destroy_chunk(glm::ivec3 const& chunk_pos)
 {
-	BakedWorldViewCircularGrid::Pixel& pixel = m_circular_grid.read_pixel(position);
+	// If the chunk asked to be destroyed isn't covered by the world view anymore, we have lost references to it (that are
+	// stored in the circular image): we can't free its geometry!
+	// IMPORTANT: The responsibility of destroying chunks that exit the world view is left to the user!
+
+	if (!is_chunk_position_inside(chunk_pos)) return;
+
+	glm::ivec3 rel_pos = to_relative_chunk_position(chunk_pos);
+	BakedWorldViewCircularGrid::Pixel& pixel = m_circular_grid.read_pixel(rel_pos);
 
 	if (pixel.m_index_count == 0) return; // The pixel was invalid
 
@@ -191,5 +239,5 @@ void BakedWorldView::destroy_chunk(glm::ivec3 const& position)
 
 	pixel.m_index_count = 0; // Invalidate the pixel
 
-	m_circular_grid.write_pixel(position, pixel);
+	m_circular_grid.write_pixel(rel_pos, pixel);
 }

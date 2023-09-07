@@ -20,7 +20,7 @@ bool EntityController::update_position()
 	if (!is_input_mode_enabled())
 		return false;
 
-	GLFWwindow* window = game().get_window();
+	GlfwWindow& window = game().get_window();
 	float dt = game().get_dt();
 
 	bool updated = false;
@@ -28,16 +28,16 @@ bool EntityController::update_position()
 	glm::vec3 position = m_entity.get_position();
 	glm::vec3 dp{};
 
-	if (glfwGetKey(window, GLFW_KEY_A)) dp += -m_entity.get_right(), updated = true;
-	if (glfwGetKey(window, GLFW_KEY_D)) dp += m_entity.get_right(), updated = true;
-	if (glfwGetKey(window, GLFW_KEY_S)) dp += -m_entity.get_forward(), updated = true;
-	if (glfwGetKey(window, GLFW_KEY_W)) dp += m_entity.get_forward(), updated = true;
-	if (glfwGetKey(window, GLFW_KEY_SPACE)) dp += m_entity.get_up(), updated = true;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) dp += -m_entity.get_up(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_A)) dp += -m_entity.get_right(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_D)) dp += m_entity.get_right(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_S)) dp += -m_entity.get_forward(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_W)) dp += m_entity.get_forward(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_SPACE)) dp += m_entity.get_up(), updated = true;
+	if (window.is_key_pressed(GLFW_KEY_LEFT_SHIFT)) dp += -m_entity.get_up(), updated = true;
 
 	if (updated)
 	{
-		position += dp * k_movement_sensitivity * (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) ? k_movement_speed_boost : 1.0f) * dt;
+		position += dp * k_movement_sensitivity * (window.is_key_pressed(GLFW_KEY_LEFT_CONTROL) ? k_movement_speed_boost : 1.0f) * dt;
 		m_entity.set_position(position);
 	}
 
@@ -49,21 +49,20 @@ bool EntityController::update_rotation()
 	if (!is_input_mode_enabled())
 		return false;
 
-	GLFWwindow* window = game().get_window();
+	GlfwWindow& window = game().get_window();
 	float dt = game().get_dt();
 
 	bool updated = false;
 
-	double cursor_x, cursor_y;
-	glfwGetCursorPos(window, &cursor_x, &cursor_y);
+	glm::vec2 cursor_pos = window.get_cursor_position();
 
 	if (m_last_cursor_x && m_last_cursor_y)
 	{
 		float yaw = m_entity.get_yaw();
 		float pitch = m_entity.get_pitch();
 
-		float cursor_dx = static_cast<float>(cursor_x - *m_last_cursor_x);
-		float cursor_dy = static_cast<float>(cursor_y - *m_last_cursor_y);
+		float cursor_dx = static_cast<float>(cursor_pos.x - *m_last_cursor_x);
+		float cursor_dy = static_cast<float>(cursor_pos.y - *m_last_cursor_y);
 
 		if (cursor_dx || cursor_dy)
 		{
@@ -78,13 +77,13 @@ bool EntityController::update_rotation()
 		}
 	}
 
-	m_last_cursor_x = cursor_x;
-	m_last_cursor_y = cursor_y;
+	m_last_cursor_x = cursor_pos.x;
+	m_last_cursor_y = cursor_pos.y;
 
 	return updated;
 }
 
 bool EntityController::is_input_mode_enabled() const
 {
-	return glfwGetInputMode(game().get_window(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+	return game().get_window().is_cursor_disabled();
 }

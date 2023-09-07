@@ -93,8 +93,11 @@ bool Entity::has_world_view() const
 
 WorldView& Entity::recreate_world_view(int render_distance)
 {
-	m_world_view = std::make_unique<WorldView>(*m_world, get_chunk_position(), render_distance);
-	RenderApi::world_view_recreate(render_distance);
+	glm::ivec3 pos = get_chunk_position();
+
+	RenderApi::world_view_recreate(pos, render_distance);
+	m_world_view = std::make_unique<WorldView>(*m_world, pos, render_distance);
+
 	return *m_world_view;
 }
 

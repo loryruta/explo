@@ -18,7 +18,7 @@ WorldView::WorldView(World& world, glm::ivec3 const& init_position, int render_d
 	m_render_distance(render_distance)
 {
 	// Use an old position such that DeltaChunkIterator will iterate over all the chunks (as the world has changed)
-	m_position = init_position + glm::ivec3(m_render_distance * 2);
+	m_position = init_position + glm::ivec3(m_render_distance * 2 + 1);
 	set_position(init_position);
 }
 
@@ -49,44 +49,50 @@ bool WorldView::is_position_inside(glm::ivec3 const& chunk_pos) const
 
 void WorldView::offset_position(glm::ivec3 const& offset)
 {
+	if (offset.x == 0 && offset.y == 0 && offset.z == 0) return;
+
 	glm::ivec3 old_position = m_position;
 	m_position += offset;
 
-	// Destroys the chunks that went out of the WorldView
+	// Destroy the chunks that went out of the world view
 	DeltaChunkIterator old_chunks_iterator(m_position, old_position, m_render_distance, [&](glm::ivec3 const& chunk_pos)
 	{
 		m_world.unload_chunk(chunk_pos);
 
 #ifdef CALL_RENDER_API
-		glm::ivec3 rel_pos = chunk_pos - old_position + m_render_distance;
-		explo::run_on_main_thread([ rel_pos ]() { RenderApi::world_view_destroy_chunk(rel_pos); });
+		RenderApi::world_view_destroy_chunk(chunk_pos);
 #endif
 	});
 	old_chunks_iterator.iterate();
 
-	// Shifts the WorldView of the offset, this has to be run _after_ the old chunks are destroyed. Since it's a circular shift,
-	// old chunks at the world view's edge, will go upfront
 #ifdef CALL_RENDER_API
-	explo::run_on_main_thread([ offset ]() { RenderApi::world_view_shift(offset); });
+	// Set the world view new position for the renderer, this has to be done *after* destroying old chunks. If the position were
+	// set before destroying the chunks, old chunk references would go missing and leak memory
+	RenderApi::world_view_set_position(m_position);
 #endif
 
-	// Finally we iterate the new chunks, generate them through the World and upload them for rendering
+	// Iterate the new chunks, generate and upload them for rendering
 	DeltaChunkIterator new_chunks_iterator(old_position, m_position, m_render_distance, [&](glm::ivec3 const& chunk_pos)
 	{
 		glm::ivec3 rel_pos = chunk_pos - m_position + m_render_distance;
-		m_world.load_chunk_async(chunk_pos, [ rel_pos ](std::shared_ptr<Chunk> const& chunk)
+
+		bool loaded;
+		std::tie(std::ignore, loaded) = m_world.load_chunk_async(chunk_pos, [](std::shared_ptr<Chunk> const& chunk)
 		{
 #ifdef CALL_RENDER_API
-			explo::run_on_main_thread([ rel_pos, weak_chunk = std::weak_ptr(chunk) ]()
+			explo::run_on_main_thread([ weak_chunk = std::weak_ptr(chunk) ]()
 			{
 				std::shared_ptr<Chunk> chunk = weak_chunk.lock();
-				if (!chunk)
-					return;
+				if (!chunk) return;
 
-				RenderApi::world_view_upload_chunk(rel_pos, *chunk);
+				// Try to upload the chunk for rendering. Since the generation is asynchronous, we could be asking the renderer
+				// to upload a chunk that is now outside the world view (e.g. the player moved very fast). In this case the
+				// renderer will silently ignore the uploading
+				RenderApi::world_view_upload_chunk(*chunk);
 			});
 #endif
 		});
+		assert(loaded);
 	});
 	new_chunks_iterator.iterate();
 }
@@ -111,4 +117,34 @@ uint32_t WorldView::relative_position_to_index(int render_distance, glm::ivec3 c
 {
 	size_t side = calc_side(render_distance);
 	return rel_chunk_pos.y * (side * side) + rel_chunk_pos.x * side + rel_chunk_pos.z;
+}
+
+bool WorldView::is_chunk_position_inside(glm::ivec3 const& world_view_pos, int render_distance, glm::ivec3 const& chunk_pos)
+{
+	int side = render_distance * 2 + 1;
+	glm::ivec3 rel_pos = chunk_pos - world_view_pos + render_distance;
+	return
+		rel_pos.x >= 0 && rel_pos.x < side &&
+		rel_pos.y >= 0 && rel_pos.y < side &&
+		rel_pos.z >= 0 && rel_pos.z < side;
+}
+
+void WorldView::iterate_chunks(
+	glm::ivec3 const& position,
+	int render_distance,
+	std::function<void(glm::ivec3 const&)> const& callback
+)
+{
+	glm::ivec3 offset{};
+	for (offset.x = -render_distance; offset.x <= render_distance; offset.x++)
+	{
+		for (offset.y = -render_distance; offset.y <= render_distance; offset.y++)
+		{
+			for (offset.z = -render_distance; offset.z <= render_distance; offset.z++)
+			{
+				glm::ivec3 chunk_pos = position + offset;
+				callback(chunk_pos);
+			}
+		}
+	}
 }

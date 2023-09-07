@@ -12,6 +12,7 @@
 #include <vren/pipeline/clustered_shading.hpp>
 #include <vren/presenter.hpp>
 #include <vren/pipeline/imgui_renderer.hpp>
+#include <vren/pipeline/debug_renderer.hpp>
 
 #include "util/profile_stats.hpp"
 #include "world/WorldView.hpp"
@@ -47,6 +48,9 @@ namespace explo
 
         vren::cluster_and_shade m_cluster_and_shade;
 		vren::imgui_renderer m_imgui_renderer;
+
+		vren::debug_renderer_draw_buffer m_debug_draw_buffer;
+		vren::debug_renderer m_debug_renderer;
 
         std::shared_ptr<vren::vk_utils::depth_buffer_t> m_color_buffer;
         std::shared_ptr<vren::vk_utils::depth_buffer_t> m_depth_buffer;
@@ -104,7 +108,7 @@ namespace explo
 		/* World view */
 
 		bool has_world_view() const { return bool(m_baked_world_view); }
-		void recreate_world_view(int render_distance);
+		void recreate_world_view(glm::ivec3 const& init_position, int render_distance);
 		BakedWorldView& get_world_view();
 
 		void upload_block_registry(BlockRegistry const& block_registry);

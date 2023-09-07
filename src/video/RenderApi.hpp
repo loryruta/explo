@@ -33,10 +33,10 @@ namespace explo
 
 		/* World view */
 
-		void world_view_recreate(int render_distance);
-		void world_view_shift(glm::ivec3 const& offset);
-		void world_view_upload_chunk(glm::ivec3 const& position, Chunk const& chunk);
-		void world_view_destroy_chunk(glm::ivec3 const& position);
+		void world_view_recreate(glm::ivec3 const& init_chunk_pos, int render_distance);
+		void world_view_set_position(glm::ivec3 const& chunk_pos);
+		void world_view_upload_chunk(Chunk const& chunk);
+		void world_view_destroy_chunk(glm::ivec3 const& chunk_pos);
 
 		/* Block registry */
 

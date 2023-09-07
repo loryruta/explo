@@ -45,10 +45,25 @@ namespace explo
 		void offset_position(glm::ivec3 const& offset);
 		void set_position(glm::ivec3 const& chunk_pos);
 
+		// ------------------------------------------------------------------------------------------------ Static methods
+
 		static int calc_side(int render_distance);
 		static size_t calc_size(int render_distance);
 
 		static uint32_t relative_position_to_index(int render_distance, glm::ivec3 const& rel_chunk_pos);
+
+		static bool is_chunk_position_inside(
+			glm::ivec3 const& world_view_pos,
+			int render_distance,
+			glm::ivec3 const& chunk_pos
+			);
+
+		/// Iterates the chunks of the world view defined by the given position and render_distance. Calls callback for every occurrence.
+		static void iterate_chunks(
+			glm::ivec3 const& world_view_pos,
+			int render_distance,
+			std::function<void(glm::ivec3 const&)> const& callback
+			);
 	};
 
 } // namespace explo

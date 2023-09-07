@@ -1,7 +1,5 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
 #include "input/EntityController.hpp"
 #include "world/BlockRegistry.hpp"
 #include "world/Entity.hpp"
@@ -10,6 +8,7 @@
 #include "util/ThreadPool.hpp"
 #include "world/volume/SinCosVolumeGenerator.hpp"
 #include "world/surface/BlockySurfaceGenerator.hpp"
+#include "GlfwWindow.hpp"
 
 namespace explo
 {
@@ -26,7 +25,7 @@ namespace explo
 		BlockySurfaceGenerator m_blocky_surface_generator;
 
         /* Video */
-        GLFWwindow* m_window;
+        GlfwWindow& m_window;
 		std::unique_ptr<DebugUi> m_debug_ui;
 
 		float m_dt = 0.0f;
@@ -38,10 +37,10 @@ namespace explo
 		std::unique_ptr<EntityController> m_player_controller;
 
     public:
-        explicit Game(GLFWwindow* window);
+        explicit Game(GlfwWindow& window);
         ~Game();
 
-		GLFWwindow* get_window() const { return m_window; };
+		GlfwWindow& get_window() { return m_window; };
 		float get_dt() const { return m_dt; }
 
 		/* Job executors */
@@ -60,7 +59,7 @@ namespace explo
 
 	// --------------------------------------------------------------------------------------------------------------------------------
 
-	void init(GLFWwindow* window);
+	void init(GlfwWindow& window);
 	void shutdown();
 
 	void render();

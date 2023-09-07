@@ -55,11 +55,12 @@ namespace explo
 		explicit BakedWorldViewCircularGrid(Renderer& renderer, int render_distance);
 		~BakedWorldViewCircularGrid();
 
-		Pixel& read_pixel(glm::ivec3 const& position);
-		void write_pixel(glm::ivec3 const& position, Pixel const& pixel);
+		Pixel& read_pixel(glm::ivec3 const& pos);
+		void write_pixel(glm::ivec3 const& pos, Pixel const& pixel);
 
 	private:
-		size_t flatten_1d_index(glm::ivec3 const& position) const;
+		glm::ivec3 to_image_index(glm::ivec3 const& pos) const;
+		size_t to_flatten_index(glm::ivec3 const& pos) const;
 	};
 
 	// ------------------------------------------------------------------------------------------------
@@ -81,6 +82,9 @@ namespace explo
 	private:
 		Renderer& m_renderer;
 
+		glm::ivec3 m_position;
+		int m_render_distance;
+
 		DeviceBuffer m_vertex_buffer;
 		VirtualAllocator m_vertex_buffer_allocator;
 
@@ -93,21 +97,23 @@ namespace explo
 		BakedWorldViewCircularGrid m_circular_grid;
 
 	public:
-		explicit BakedWorldView(Renderer& renderer, int render_distance);
+		explicit BakedWorldView(Renderer& renderer, glm::ivec3 const& init_position, int render_distance);
 		~BakedWorldView();
 
-		/// Shifts the world view by a certain offset (expressed in chunk space).
-		void shift(glm::ivec3 const& offset);
+		bool is_chunk_position_inside(glm::ivec3 const& chunk_pos) const;
 
-		/// Uploads the chunk geometry to the given world view space position.
-		void upload_chunk(glm::ivec3 const& position, Chunk const& chunk);
-
-		/// Destroys the chunk that was uploaded at the given world view space position.
-		void destroy_chunk(glm::ivec3 const& position);
+		/// Sets the position of the world view. As internally uses a CircularGrid, chunks that would be still in WorldView
+		/// after the movement will be preserved. However, the responsibility of destroying old chunks is left to the user.
+		/// NOTE: Old chunks should be destroyed using `destroy_chunk()` before calling this function.
+		void set_position(glm::ivec3 const& position);
+		void upload_chunk(Chunk const& chunk);
+		void destroy_chunk(glm::ivec3 const& chunk_pos);
 
 	private:
 		/// Places the given data in the device buffer eventually re-allocating it if doesn't fit.
 		/// \return The offset, within the buffer, where the data is allocated.
 		size_t place_data(DeviceBuffer& buffer, VirtualAllocator& allocator, void* data, size_t data_size);
+
+		glm::ivec3 to_relative_chunk_position(glm::ivec3 const& chunk_pos) const;
 	};
 } // namespace explo

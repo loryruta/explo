@@ -1,8 +1,11 @@
 #pragma once
 
 #include <functional>
+#include <unordered_set>
 
 #include <glm/glm.hpp>
+
+#include "util/misc.hpp"
 
 namespace explo
 {
@@ -16,6 +19,9 @@ namespace explo
 		glm::ivec3 m_new_center;
 		int m_render_distance;
 		CallbackT m_callback;
+
+		/// A set holding the chunks for which the callback was called (very simple and stupid approach).
+		std::unordered_set<glm::ivec3, vec_hash> m_visited_chunks;
 
 	public:
 		explicit DeltaChunkIterator(
