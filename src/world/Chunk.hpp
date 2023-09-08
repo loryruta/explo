@@ -11,7 +11,7 @@
 #include <vren/model/model.hpp>
 
 #include "world/surface/SurfaceGenerator.hpp"
-#include "world/volume/storage/VolumeStorage.hpp"
+#include "world/volume/Octree.hpp"
 #include "world/volume/VolumeGenerator.hpp"
 
 namespace explo
@@ -47,7 +47,7 @@ namespace explo
 		glm::ivec3 m_position;
 
 		mutable std::mutex m_volume_mutex;
-		std::unique_ptr<VolumeStorage> m_volume;
+		std::unique_ptr<Octree> m_octree;
 
 		std::unique_ptr<Surface> m_surface;
 
@@ -58,11 +58,10 @@ namespace explo
 		World& get_world() const { return m_world; }
 		glm::ivec3 const& get_position() const { return m_position; }
 
-		bool has_volume() const;
-		VolumeStorage& get_volume() const;
-		void set_volume(std::unique_ptr<VolumeStorage>&& volume);
+		Octree& octree() const;
 
-		uint8_t get_block_type_at(glm::ivec3 const& block) const;
+		uint8_t get_block_type_at(glm::ivec3 const& block_pos) const;
+		void set_block_type_at(glm::ivec3 const& block_pos, uint8_t block_type);
 
 		bool has_surface() const { return bool(m_surface); };
 		std::unique_ptr<Surface> const& get_surface() const { return m_surface; }

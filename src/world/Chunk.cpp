@@ -1,5 +1,7 @@
 #include "Chunk.hpp"
 
+#include <glm/gtc/integer.hpp>
+
 #include "Game.hpp"
 #include "World.hpp"
 
@@ -9,29 +11,18 @@ Chunk::Chunk(World& world, glm::ivec3 const& position) :
 	m_world(world),
 	m_position(position)
 {
+	uint32_t max_side = std::max(std::max(Chunk::k_grid_size.x, Chunk::k_grid_size.y), Chunk::k_grid_size.z);
+	uint32_t octree_depth = glm::log2(ceil_to_power_of_2(max_side));
+	m_octree = std::make_unique<Octree>(octree_depth);
 }
 
 Chunk::~Chunk()
 {
 }
 
-bool Chunk::has_volume() const
+Octree& Chunk::octree() const
 {
-	std::lock_guard<std::mutex> lock(m_volume_mutex);
-	return bool(m_volume);
-}
-
-VolumeStorage& Chunk::get_volume() const
-{
-	std::lock_guard<std::mutex> lock(m_volume_mutex);
-	if (!m_volume) throw std::runtime_error("No volume");
-	return *m_volume;
-}
-
-void Chunk::set_volume(std::unique_ptr<VolumeStorage>&& volume)
-{
-	std::lock_guard<std::mutex> lock(m_volume_mutex);
-	m_volume = std::move(volume);
+	return *m_octree;
 }
 
 glm::ivec3 Chunk::to_world_block_position(glm::ivec3 const& chunk_block_pos) const
@@ -60,12 +51,17 @@ glm::vec3 Chunk::to_chunk_position(glm::vec3 const& world_pos)
 	return glm::mod(world_pos, Chunk::k_world_size);
 }
 
-uint8_t Chunk::get_block_type_at(glm::ivec3 const& block) const
+uint8_t Chunk::get_block_type_at(glm::ivec3 const& block_pos) const
 {
-	if (!m_volume || !Chunk::test_chunk_block_position(block))
-		return 0;
+	if (Chunk::test_chunk_block_position(block_pos))
+		return 0; // TODO if the block coord is not inside the chunk, throw an error instead!
+	return m_octree->get_voxel_at(Octree::to_morton_code(block_pos));
+}
 
-	return m_volume->get_block_type_at(block);
+void Chunk::set_block_type_at(glm::ivec3 const& block_pos, uint8_t block_type)
+{
+	assert(Chunk::test_chunk_block_position(block_pos));
+	return m_octree->set_voxel_at(Octree::to_morton_code(block_pos), block_type);
 }
 
 bool Chunk::test_chunk_block_position(glm::ivec3 const& chunk_block_pos)

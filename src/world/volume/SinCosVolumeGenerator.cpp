@@ -1,14 +1,11 @@
 #include "SinCosVolumeGenerator.hpp"
 
-#include "storage/OctreeVolumeStorage.hpp"
 #include "util/misc.hpp"
 
 using namespace explo;
 
 void SinCosVolumeGenerator::generate_volume(Chunk& chunk)
 {
-	std::unique_ptr<OctreeVolumeStorage> volume = std::make_unique<OctreeVolumeStorage>(chunk.get_grid_size());
-
 	if (chunk.get_position().y != 0 && chunk.get_position().y != 1) return;
 
 	for (int x = 0; x < Chunk::k_grid_size.x; x++)
@@ -23,10 +20,7 @@ void SinCosVolumeGenerator::generate_volume(Chunk& chunk)
 				);
 
 			if (chunk.test_block_position(block_pos))
-			{
-				volume->set_block_type_at(chunk.to_chunk_position(block_pos), 1 /* block_type */);
-			}
+				chunk.set_block_type_at(chunk.to_chunk_position(block_pos), 1);
 		}
 	}
-	chunk.set_volume(std::move(volume));
 }

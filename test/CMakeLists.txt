@@ -1,6 +1,6 @@
 add_executable(explo_test
     main.cpp
-    OctreeVolumeStorageTest.cpp
+    OctreeTest.cpp
     MiscTest.cpp
     DeltaChunkIteratorTest.cpp
     )

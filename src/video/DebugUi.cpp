@@ -93,7 +93,7 @@ void DebugUi::display_world_view_window()
 				{
 					std::shared_ptr<Chunk> chunk = world.get_chunk(chunk_pos);
 					if (chunk->has_surface())     rect_color = 0xFF485579; // Brownish, with surface
-					else if (chunk->has_volume()) rect_color = 0xFF00FFFF; // Yellow, with volume
+					//else if (chunk->has_volume()) rect_color = 0xFF00FFFF; // Yellow, with volume
 					else                          rect_color = 0xFF90FFCC; // Green, just loaded
 				}
 

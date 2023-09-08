@@ -74,7 +74,7 @@ void Game::render()
 	{
 		m_fps = m_fps_counter;
 		m_fps_counter = 0;
-		m_last_fps_time = glfwGetTime();
+		m_last_fps_time = (float) glfwGetTime();
 	}
 
 	// dt

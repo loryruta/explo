@@ -32,9 +32,6 @@ add_library(explo_lib
     src/world/surface/Surface.hpp
     src/world/surface/SurfaceWriter.cpp
     src/world/surface/SurfaceWriter.hpp
-    src/world/volume/storage/OctreeVolumeStorage.cpp
-    src/world/volume/storage/OctreeVolumeStorage.hpp
-    src/world/volume/storage/VolumeStorage.hpp
     src/world/volume/SinCosVolumeGenerator.cpp
     src/world/volume/SinCosVolumeGenerator.hpp
     src/world/BlockRegistry.cpp
@@ -74,7 +71,7 @@ add_library(explo_lib
     src/video/pipeline/DrawChunkList.hpp
     src/video/pipeline/DrawChunkList.cpp
     src/util/Aabb.cpp
-    )
+    src/world/volume/Octree.hpp src/world/volume/Octree.cpp)
 
 target_include_directories(explo_lib PUBLIC "./src/")
 

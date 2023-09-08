@@ -23,7 +23,7 @@ void BlockySurfaceGenerator::write_block_geometry(
 	glm::vec3 t = f + (glm::vec3(Chunk::k_world_size) / glm::vec3(Chunk::k_grid_size)); // Block to (world space)
 
 	// Left face
-	if (block.x == 0 || chunk.get_block_type_at(block + glm::ivec3(-1, 0, 0)) == 0)
+	if (block.x == 0 || chunk.get_block_type_at(block + glm::ivec3(-1, 0, 0)) == 0) // TODO check if the offset block is still inside the chunk
 	{
 		surface_writer.add_quad(
 			SurfaceVertex{.m_position = glm::vec3(f.x, f.y, t.z), .m_normal = glm::vec3(-1, 0, 0), .m_texcoords = texcoord },
@@ -89,50 +89,20 @@ void BlockySurfaceGenerator::write_block_geometry(
 	}
 }
 
-void BlockySurfaceGenerator::generate_surface_from_grid3d_volume(
-	Chunk& chunk,
-	VolumeStorage& volume_storage,
-	SurfaceWriter& surface_writer
-	)
+void BlockySurfaceGenerator::generate(Chunk& chunk, SurfaceWriter& surface_writer)
 {
-	// TODO
-}
-
-void BlockySurfaceGenerator::generate_surface_from_octree_volume(
-	Chunk& chunk,
-	OctreeVolumeStorage& volume_storage,
-	SurfaceWriter& surface_writer
-	)
-{
-	volume_storage.traverse_octree([&](OctreeVolumeStorage::OctreeNode const& node, uint32_t level, uint64_t morton_code)
+	chunk.octree().traverse([&](uint32_t block_type, uint32_t level, uint32_t morton_code)
 	{
-		uint8_t block_type = node.m_block;
-		if (node.is_leaf() && block_type > 0) // TODO check if it's a visible block or not using the BlockRegistry?
+		if (block_type > 0) // TODO check if it's a visible block or not using the BlockRegistry?
 		{
 			write_block_geometry(
 				chunk,
-				OctreeVolumeStorage::make_position_from_morton_code(morton_code),
+				Octree::to_voxel_position(morton_code),
 				block_type,
 				surface_writer
-				);
+			);
 		}
 	});
-}
-
-void BlockySurfaceGenerator::generate(Chunk& chunk, SurfaceWriter& surface_writer)
-{
-	if (!chunk.has_volume()) return;
-
-	VolumeStorage& volume = chunk.get_volume();
-	try
-	{
-		OctreeVolumeStorage& octree_volume = dynamic_cast<OctreeVolumeStorage&>(volume);
-		generate_surface_from_octree_volume(chunk, octree_volume, surface_writer);
-	}
-	catch (std::bad_cast& exception)
-	{
-		generate_surface_from_grid3d_volume(chunk, volume, surface_writer);
-	}
 
 	surface_writer.add_instance(SurfaceInstance{
 		.m_transform = glm::identity<glm::mat4>(),
