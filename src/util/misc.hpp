@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <chrono>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -51,6 +52,12 @@ namespace explo
 		n |= n >> 16;
 		n++;
 		return n;
+	}
+
+	inline double current_ms()
+	{
+		using namespace std::chrono;
+		return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 	}
 
 } // namespace explo

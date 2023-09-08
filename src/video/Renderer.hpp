@@ -108,7 +108,7 @@ namespace explo
 		/* World view */
 
 		bool has_world_view() const { return bool(m_baked_world_view); }
-		void recreate_world_view(glm::ivec3 const& init_position, int render_distance);
+		void recreate_world_view(glm::ivec3 const& init_position, glm::ivec3 const& render_distance);
 		BakedWorldView& get_world_view();
 
 		void upload_block_registry(BlockRegistry const& block_registry);

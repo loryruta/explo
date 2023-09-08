@@ -33,7 +33,7 @@ namespace explo
 
 		/* World view */
 
-		void world_view_recreate(glm::ivec3 const& init_chunk_pos, int render_distance);
+		void world_view_recreate(glm::ivec3 const& init_chunk_pos, glm::ivec3 const& render_distance);
 		void world_view_set_position(glm::ivec3 const& chunk_pos);
 		void world_view_upload_chunk(Chunk const& chunk);
 		void world_view_destroy_chunk(glm::ivec3 const& chunk_pos);

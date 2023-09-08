@@ -14,8 +14,8 @@ struct Camera
 layout(push_constant) uniform PushConstants
 {
     Camera camera;
-    ivec3 view_start;
-    int render_distance;
+    ivec3 view_start;      float _pad1;
+    ivec3 render_distance; float _pad2;
 };
 
 layout(set = 0, binding = 0, rgba32ui) readonly uniform uimage3D baked_world_view;
@@ -41,14 +41,14 @@ layout(set = 0, binding = 2) buffer ChunkDrawListIndex
 
 bool is_inside_world_view(ivec3 position)
 {
-    int side = render_distance * 2 + 1;
-    return position.x < side && position.y < side && position.z < side;
+    ivec3 side = render_distance * 2 + 1;
+    return position.x < side.x && position.y < side.y && position.z < side.z;
 }
 
 DrawCall read_draw_call_at(ivec3 chunk_pos)
 {
     // Apply the circular grid shift here before accessing the actual image data
-    int view_side = render_distance * 2 + 1;
+    ivec3 view_side = render_distance * 2 + 1;
     ivec3 view_idx = (chunk_pos + view_start) % view_side;
 
     uvec4 i0 = imageLoad(baked_world_view, view_idx * ivec3(2, 1, 1));  // We store the data on two adjacent pixels (along X)

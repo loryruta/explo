@@ -304,7 +304,7 @@ void Renderer::rebuild_camera_projection_matrix()
 
 /* World view */
 
-void Renderer::recreate_world_view(glm::ivec3 const& init_position, int render_distance)
+void Renderer::recreate_world_view(glm::ivec3 const& init_position, glm::ivec3 const& render_distance)
 {
 	m_baked_world_view = std::make_unique<BakedWorldView>(*this, init_position, render_distance);
 }

@@ -57,7 +57,7 @@ void RenderApi::block_registry_upload(BlockRegistry const& block_registry)
 
 /* World view */
 
-void RenderApi::world_view_recreate(glm::ivec3 const& init_position, int render_distance)
+void RenderApi::world_view_recreate(glm::ivec3 const& init_position, glm::ivec3 const& render_distance)
 {
 	s_renderer->recreate_world_view(init_position, render_distance);
 }

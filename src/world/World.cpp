@@ -45,12 +45,16 @@ void World::generate_chunk_surface(Chunk& chunk)
 {
 	// TODO Volume generation shall not take place while the surface is being generated
 
+	uint64_t started_at = current_ms();
+
 	Surface surface;
 	SurfaceWriter surface_writer(surface);
 
 	m_surface_generator.generate(chunk, surface_writer);
 
 	chunk.m_surface = std::make_unique<Surface>(std::move(surface));
+
+	glm::ivec3 chunk_pos = chunk.get_position();
 }
 
 void World::generate_chunk_async(std::shared_ptr<Chunk> const& chunk, ChunkLoadedCallbackT const& callback)
@@ -65,7 +69,15 @@ void World::generate_chunk_async(std::shared_ptr<Chunk> const& chunk, ChunkLoade
 
 			if (!world || !chunk) return;
 
+			uint64_t started_at = current_ms();
+
 			world->m_volume_generator.generate_volume(*chunk);
+
+			glm::ivec3 chunk_pos = chunk->get_position();
+			LOG_D("World", "Volume generated; Chunk: ({}, {}, {}), dt: {}",
+				chunk_pos.x, chunk_pos.y, chunk_pos.z,
+				  current_ms() - started_at
+				);
 		})
 		// Generate the surface
 		.then([ weak_world = weak_from_this(), weak_chunk = std::weak_ptr(chunk) ]()
@@ -75,7 +87,15 @@ void World::generate_chunk_async(std::shared_ptr<Chunk> const& chunk, ChunkLoade
 
 			if (!world || !chunk) return;
 
+			uint64_t started_at = current_ms();
+
 			world->generate_chunk_surface(*chunk);
+
+			glm::ivec3 chunk_pos = chunk->get_position();
+			LOG_D("World", "Surface generated; Chunk: ({}, {}, {}), dt: {}",
+				chunk_pos.x, chunk_pos.y, chunk_pos.z,
+				current_ms() - started_at
+				);
 		})
 		// Call the user provided callback
 		.then([ weak_chunk = std::weak_ptr(chunk), callback ]()

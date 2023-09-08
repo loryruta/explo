@@ -22,15 +22,15 @@ namespace explo
 	private:
 		World& m_world;
 		glm::ivec3 m_position;
-		int m_render_distance;
+		glm::ivec3 m_render_distance;
 
 	public:
-		explicit WorldView(World& world, glm::ivec3 const& init_position, int render_distance);
+		explicit WorldView(World& world, glm::ivec3 const& init_position, glm::ivec3 const& render_distance);
 		~WorldView();
 
-		int get_render_distance() const { return m_render_distance; }
-		int get_side() const { return calc_side(m_render_distance); }
-		uint32_t get_size() const { return calc_size(m_render_distance); }
+		glm::ivec3 get_render_distance() const { return m_render_distance; }
+		glm::ivec3 get_side() const { return m_render_distance * 2 + 1; }
+		size_t get_size() const { return m_render_distance.x * m_render_distance.y * m_render_distance.z; }
 
 		/// Returns the chunk position relative to the world view. Such that (0,0,0) is left-bottom-back.
 		glm::ivec3 get_relative_chunk_position(glm::ivec3 const& chunk_pos) const;
@@ -47,21 +47,16 @@ namespace explo
 
 		// ------------------------------------------------------------------------------------------------ Static methods
 
-		static int calc_side(int render_distance);
-		static size_t calc_size(int render_distance);
-
-		static uint32_t relative_position_to_index(int render_distance, glm::ivec3 const& rel_chunk_pos);
-
 		static bool is_chunk_position_inside(
 			glm::ivec3 const& world_view_pos,
-			int render_distance,
+			glm::ivec3 const& render_distance,
 			glm::ivec3 const& chunk_pos
 			);
 
 		/// Iterates the chunks of the world view defined by the given position and render_distance. Calls callback for every occurrence.
 		static void iterate_chunks(
 			glm::ivec3 const& world_view_pos,
-			int render_distance,
+			glm::ivec3 const& render_distance,
 			std::function<void(glm::ivec3 const&)> const& callback
 			);
 	};

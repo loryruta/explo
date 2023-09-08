@@ -31,6 +31,11 @@ namespace explo
 		float m_dt = 0.0f;
 		std::optional<float> m_last_frame_time;
 
+		// FPS
+		std::optional<float> m_last_fps_time;
+		int m_fps_counter = 0;
+		int m_fps = 0;
+
 		/* Late initialize */
 		std::shared_ptr<World> m_world;
 		std::shared_ptr<Entity> m_player;

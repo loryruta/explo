@@ -43,16 +43,16 @@ namespace explo
 	private:
 		Renderer& m_renderer;
 
-		int m_side;
+		glm::ivec3 m_render_distance;
+		glm::ivec3 m_side;
+
+		glm::ivec3 m_start;
 
 		std::unique_ptr<DeviceImage3d> m_gpu_image;
 		std::vector<Pixel> m_cpu_image;
 
-		glm::ivec3 m_start;
-		int m_render_distance;
-
 	public:
-		explicit BakedWorldViewCircularGrid(Renderer& renderer, int render_distance);
+		explicit BakedWorldViewCircularGrid(Renderer& renderer, glm::ivec3 const& render_distance);
 		~BakedWorldViewCircularGrid();
 
 		Pixel& read_pixel(glm::ivec3 const& pos);
@@ -83,7 +83,7 @@ namespace explo
 		Renderer& m_renderer;
 
 		glm::ivec3 m_position;
-		int m_render_distance;
+		glm::ivec3 m_render_distance;
 
 		DeviceBuffer m_vertex_buffer;
 		VirtualAllocator m_vertex_buffer_allocator;
@@ -97,7 +97,11 @@ namespace explo
 		BakedWorldViewCircularGrid m_circular_grid;
 
 	public:
-		explicit BakedWorldView(Renderer& renderer, glm::ivec3 const& init_position, int render_distance);
+		explicit BakedWorldView(
+			Renderer& renderer,
+			glm::ivec3 const& init_position,
+			glm::ivec3 const& render_distance
+			);
 		~BakedWorldView();
 
 		bool is_chunk_position_inside(glm::ivec3 const& chunk_pos) const;

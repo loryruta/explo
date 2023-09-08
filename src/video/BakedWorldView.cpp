@@ -8,21 +8,24 @@ using namespace explo;
 // BakedWorldViewCircularGrid
 // --------------------------------------------------------------------------------------------------------------------------------
 
-BakedWorldViewCircularGrid::BakedWorldViewCircularGrid(Renderer& renderer, int render_distance) :
+BakedWorldViewCircularGrid::BakedWorldViewCircularGrid(
+	Renderer& renderer,
+	glm::ivec3 const& render_distance
+	) :
 	m_renderer(renderer),
 
-	m_start{},
-	m_render_distance(render_distance)
+	m_render_distance(render_distance),
+	m_side(m_render_distance * 2 + 1)
 {
-	m_side = m_render_distance * 2 + 1;
+	m_start = glm::ivec3(0);
 
-	glm::ivec3 gpu_image_size{
-		m_side * 2, // The X axis is doubled in order to store the chunk information
-		m_side,
-		m_side
-	};
+	glm::ivec3 gpu_image_size(
+		m_side.x * 2, // The X axis is doubled in order to store the chunk information
+		m_side.y,
+		m_side.z
+		);
 	m_gpu_image = std::make_unique<DeviceImage3d>(m_renderer, gpu_image_size, VK_FORMAT_R32G32B32A32_UINT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	m_cpu_image.resize(m_side * m_side * m_side);
+	m_cpu_image.resize(m_side.x * m_side.y * m_side.z);
 }
 
 BakedWorldViewCircularGrid::~BakedWorldViewCircularGrid()
@@ -37,15 +40,15 @@ glm::ivec3 BakedWorldViewCircularGrid::to_image_index(glm::ivec3 const& pos) con
 size_t BakedWorldViewCircularGrid::to_flatten_index(glm::ivec3 const& pos) const
 {
 	glm::ivec3 mod_pos = to_image_index(pos);
-	return mod_pos.y * (m_side * m_side) + mod_pos.x * m_side + mod_pos.z;
+	return mod_pos.y * (m_side.x * m_side.z) + mod_pos.x * m_side.z + mod_pos.z;
 }
 
 BakedWorldViewCircularGrid::Pixel& BakedWorldViewCircularGrid::read_pixel(glm::ivec3 const& pos)
 {
 	assert(
-		pos.x >= 0 && pos.x < m_side &&
-		pos.y >= 0 && pos.y < m_side &&
-		pos.z >= 0 && pos.z < m_side
+		pos.x >= 0 && pos.x < m_side.x &&
+		pos.y >= 0 && pos.y < m_side.y &&
+		pos.z >= 0 && pos.z < m_side.z
 		);
 
 	return m_cpu_image.at(to_flatten_index(pos));
@@ -54,9 +57,9 @@ BakedWorldViewCircularGrid::Pixel& BakedWorldViewCircularGrid::read_pixel(glm::i
 void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& pos, Pixel const& pixel)
 {
 	assert(
-		pos.x >= 0 && pos.x < m_side &&
-		pos.y >= 0 && pos.y < m_side &&
-		pos.z >= 0 && pos.z < m_side
+		pos.x >= 0 && pos.x < m_side.x &&
+		pos.y >= 0 && pos.y < m_side.y &&
+		pos.z >= 0 && pos.z < m_side.z
 		);
 
 
@@ -79,7 +82,7 @@ void BakedWorldViewCircularGrid::write_pixel(glm::ivec3 const& pos, Pixel const&
 BakedWorldView::BakedWorldView(
 	Renderer& renderer,
 	glm::ivec3 const& init_position,
-	int render_distance
+	glm::ivec3 const& render_distance
 	) :
 	m_renderer(renderer),
 
@@ -120,12 +123,12 @@ BakedWorldView::~BakedWorldView()
 
 bool BakedWorldView::is_chunk_position_inside(glm::ivec3 const& chunk_pos) const
 {
-	int side = m_render_distance * 2 + 1;
+	glm::ivec3 side = m_render_distance * 2 + 1;
 	glm::ivec3 rel_pos = to_relative_chunk_position(chunk_pos);
 	return
-		rel_pos.x >= 0 && rel_pos.x < side &&
-		rel_pos.y >= 0 && rel_pos.y < side &&
-		rel_pos.z >= 0 && rel_pos.z < side;
+		rel_pos.x >= 0 && rel_pos.x < side.x &&
+		rel_pos.y >= 0 && rel_pos.y < side.y &&
+		rel_pos.z >= 0 && rel_pos.z < side.z;
 }
 
 glm::ivec3 BakedWorldView::to_relative_chunk_position(glm::ivec3 const& chunk_pos) const
@@ -157,8 +160,7 @@ void BakedWorldView::set_position(glm::ivec3 const& new_position)
 {
 	glm::ivec3 offset = new_position - m_position;
 
-	int side = m_circular_grid.m_side;
-	m_circular_grid.m_start = pmod(m_circular_grid.m_start + offset, glm::ivec3(side));
+	m_circular_grid.m_start = pmod(m_circular_grid.m_start + offset, m_circular_grid.m_side);
 
 	m_position = new_position;
 }

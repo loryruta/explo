@@ -17,7 +17,7 @@ namespace explo
 	private:
 		glm::ivec3 m_old_center;
 		glm::ivec3 m_new_center;
-		int m_render_distance;
+		glm::ivec3 m_render_distance;
 		CallbackT m_callback;
 
 		/// A set holding the chunks for which the callback was called (very simple and stupid approach).
@@ -27,10 +27,10 @@ namespace explo
 		explicit DeltaChunkIterator(
 			glm::ivec3 const& old_center,
 			glm::ivec3 const& new_center,
-			int render_distance,
+			glm::ivec3 const& render_distance,
 			CallbackT const& callback
 			);
-		~DeltaChunkIterator() = default;
+		~DeltaChunkIterator();
 
 		/// Iterates over the new chunks according to the shift given by world view's old center and new center.
 		void iterate();

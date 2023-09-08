@@ -42,7 +42,7 @@ void Game::late_initialize()
 	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 10, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	const int k_render_distance = 5;
+	const glm::ivec3 k_render_distance(10, 0, 10);
 	m_player->recreate_world_view(k_render_distance);
 
 	RenderApi::camera_set_position(m_player->get_position());
@@ -67,9 +67,21 @@ void Game::on_window_resize(uint32_t width, uint32_t height)
 
 void Game::render()
 {
-	// Calculate dt
+	m_fps_counter++;
+
+	// FPS
+	if (!m_last_fps_time || (glfwGetTime() - *m_last_fps_time) >= 1.0f)
+	{
+		m_fps = m_fps_counter;
+		m_fps_counter = 0;
+		m_last_fps_time = glfwGetTime();
+	}
+
+	// dt
 	if (m_last_frame_time)
+	{
 		m_dt = float(glfwGetTime()) - *m_last_frame_time;
+	}
 
 	m_last_frame_time = (float) glfwGetTime();
 

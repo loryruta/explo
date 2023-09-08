@@ -17,12 +17,12 @@ namespace explo
 	{
 		struct PushConstants
 		{
-			struct {
+			struct
+			{
 				glm::vec3 m_position; float _pad;
 			} m_camera;
-
-			glm::ivec3 m_world_view_start;
-			int m_render_distance;
+			glm::ivec3 m_world_view_start; float _pad1;
+			glm::ivec3 m_render_distance;  float _pad2;
 		};
 
 	private:

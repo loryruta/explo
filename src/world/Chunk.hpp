@@ -39,8 +39,8 @@ namespace explo
 		friend class SurfaceGenerator;
 
 	public:
-		static constexpr glm::ivec3 k_grid_size = glm::ivec3(16, 16, 16);
-		static constexpr glm::vec3 k_world_size = glm::vec3(k_grid_size);
+		static constexpr glm::ivec3 k_grid_size = glm::ivec3(16, 256, 16);          ///< How many blocks does a chunk contain
+		static constexpr glm::vec3 k_world_size = glm::vec3(16.0f, 256.0f, 16.0f);  ///< The size of the chunk in world space (commonly equal to the grid size)
 
 	private:
 		World& m_world;

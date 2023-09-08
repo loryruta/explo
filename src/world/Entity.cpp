@@ -24,8 +24,7 @@ void Entity::set_world(World& world, glm::vec3 const& position)
 
 	if (m_world_view) // If the entity already had a WorldView we recreate it with the new World
 	{
-		int render_distance = m_world_view->get_render_distance();
-		recreate_world_view(render_distance);
+		recreate_world_view(m_world_view->get_render_distance());
 	}
 }
 
@@ -91,7 +90,7 @@ bool Entity::has_world_view() const
 	return bool(m_world_view);
 }
 
-WorldView& Entity::recreate_world_view(int render_distance)
+WorldView& Entity::recreate_world_view(glm::ivec3 const& render_distance)
 {
 	glm::ivec3 pos = get_chunk_position();
 

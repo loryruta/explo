@@ -53,8 +53,8 @@ void DebugUi::display_world_view_window()
 	World& world = player.get_world();
 	WorldView& world_view = player.get_world_view();
 
-	int render_distance = world_view.get_render_distance();
-	int world_view_side = world_view.get_side();
+	glm::ivec3 render_distance = world_view.get_render_distance();
+	glm::ivec3 world_view_side = world_view.get_side();
 
 	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_Once);
 
@@ -78,14 +78,14 @@ void DebugUi::display_world_view_window()
 		glm::ivec3 player_chunk_pos = player.get_chunk_position();
 		glm::vec3 player_chunk_rel_pos = player.get_chunk_relative_position();
 
-		for (int x = 0; x < world_view_side; x++)
+		for (int x = 0; x < world_view_side.x; x++)
 		{
-			for (int z = 0; z < world_view_side; z++)
+			for (int z = 0; z < world_view_side.z; z++)
 			{
 				glm::ivec3 chunk_pos(
-					x - render_distance + player_chunk_pos.x,
+					x - render_distance.x + player_chunk_pos.x,
 					player_chunk_pos.y,
-					z - render_distance + player_chunk_pos.z
+					z - render_distance.z + player_chunk_pos.z
 					);
 
 				ImU32 rect_color = 0xFF9E9E9E; // Grey, not loaded
@@ -114,8 +114,8 @@ void DebugUi::display_world_view_window()
 		}
 
 		ImVec2 player_rect_pos = ImVec2(
-			win_pos.x + render_distance * rect_size.x + rect_pad.x * render_distance,
-			win_pos.y + render_distance * rect_size.y + rect_pad.y * render_distance
+			win_pos.x + render_distance.x * rect_size.x + rect_pad.x * render_distance.x,
+			win_pos.y + render_distance.z * rect_size.y + rect_pad.y * render_distance.z
 			);
 
 		glm::vec3 n = player_chunk_rel_pos / Chunk::k_world_size; // Normalized chunk-relative position
@@ -177,7 +177,8 @@ void DebugUi::display_renderer_window()
 {
 	if (ImGui::Begin("Renderer"))
 	{
-		ImGui::Text("Nothing in here at the moment... :(");
+		ImGui::Text("Dt: %.3f", game().m_dt);
+		ImGui::Text("FPS: %d", game().m_fps);
 	}
 
 	ImGui::End();
@@ -251,7 +252,6 @@ void DebugUi::display()
 	display_jobs_window();
 	display_player_window();
 	display_renderer_window();
-	display_world_view_window();
 	display_baked_world_view_window();
 	display_vma_memory_statistics();
 }
