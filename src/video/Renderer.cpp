@@ -75,7 +75,7 @@ Renderer::Renderer(GLFWwindow* window) :
 		m_light_array.m_directional_light_buffer.get_mapped_pointer<vren::directional_light>();
 
 	directional_lights[0].m_direction = glm::vec3(0.707f, -0.707f,  0.);
-	directional_lights[0].m_color = glm::vec3(1.0f);
+	directional_lights[0].m_color = glm::vec3(255, 221, 48) / glm::vec3(255.0f);
 
 	m_light_array.m_directional_light_count = 1;
 }

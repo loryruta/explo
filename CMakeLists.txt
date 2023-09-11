@@ -42,6 +42,10 @@ add_library(explo_lib
     src/world/DeltaChunkIterator.hpp
     src/world/Entity.cpp
     src/world/Entity.hpp
+    src/world/volume/Octree.hpp
+    src/world/volume/Octree.cpp
+    src/world/volume/PerlinNoiseGenerator.hpp
+    src/world/volume/PerlinNoiseGenerator.cpp
     src/world/World.cpp
     src/world/World.hpp
 
@@ -71,7 +75,7 @@ add_library(explo_lib
     src/video/pipeline/DrawChunkList.hpp
     src/video/pipeline/DrawChunkList.cpp
     src/util/Aabb.cpp
-    src/world/volume/Octree.hpp src/world/volume/Octree.cpp)
+    )
 
 target_include_directories(explo_lib PUBLIC "./src/")
 

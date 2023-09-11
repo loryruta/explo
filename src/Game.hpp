@@ -7,6 +7,7 @@
 #include "util/SyncJobExecutor.hpp"
 #include "util/ThreadPool.hpp"
 #include "world/volume/SinCosVolumeGenerator.hpp"
+#include "world/volume/PerlinNoiseGenerator.hpp"
 #include "world/surface/BlockySurfaceGenerator.hpp"
 #include "GlfwWindow.hpp"
 
@@ -21,8 +22,8 @@ namespace explo
 
         /* World */
 		BlockRegistry m_block_registry;
-		SinCosVolumeGenerator m_sincos_volume_generator;
-		BlockySurfaceGenerator m_blocky_surface_generator;
+		PerlinNoiseGenerator m_volume_generator;
+		BlockySurfaceGenerator m_surface_generator;
 
         /* Video */
         GlfwWindow& m_window;

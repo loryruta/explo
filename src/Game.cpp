@@ -35,14 +35,14 @@ Game::~Game()
 void Game::late_initialize()
 {
 	m_world = std::make_shared<World>(
-		m_sincos_volume_generator,
-		m_blocky_surface_generator
+		m_volume_generator,
+		m_surface_generator
 		);
 
 	m_player = std::make_shared<Entity>(*m_world, glm::vec3(0, 10, 0));
 	m_player_controller = std::make_unique<EntityController>(*m_player);
 
-	const glm::ivec3 k_render_distance(10, 0, 10);
+	const glm::ivec3 k_render_distance(20, 0, 20);
 	m_player->recreate_world_view(k_render_distance);
 
 	RenderApi::camera_set_position(m_player->get_position());
