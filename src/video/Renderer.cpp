@@ -205,6 +205,7 @@ void Renderer::on_frame(
         )
     );
 
+	/*
 	m_debug_draw_buffer.clear();
 
 	m_debug_draw_buffer.add_cube({
@@ -227,6 +228,7 @@ void Renderer::on_frame(
 			m_debug_draw_buffer,
 			true
 			));
+	*/
 
 	// Renders UI
 	if (m_ui_setup_function)

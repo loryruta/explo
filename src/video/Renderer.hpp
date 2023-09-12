@@ -80,7 +80,7 @@ namespace explo
     public:
 		static constexpr size_t k_chunk_draw_list_buffer_size = 8388608; // 8MB
 
-		VkClearColorValue m_background_color = VkClearColorValue{0.77f, 0.6f, 1.0f, 0.0f};
+		VkClearColorValue m_background_color = VkClearColorValue{0.32f, 0.933f, 1.0f, 0.0f};
 
         explicit Renderer(GLFWwindow* m_window);
         ~Renderer();

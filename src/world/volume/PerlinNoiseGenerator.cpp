@@ -14,7 +14,8 @@ PerlinNoiseGenerator::~PerlinNoiseGenerator()
 
 int PerlinNoiseGenerator::get_height_at(int x, int z)
 {
-	double val = m_perlin_noise.noise2D(double(x) * 0.023, double(z) * 0.023);
+	const double k_frequency = 0.023;
+	double val = m_perlin_noise.noise2D(double(x) * k_frequency, double(z) * k_frequency);
 	return ((val + 1.0) / 2.0) * k_max_world_height;
 }
 
