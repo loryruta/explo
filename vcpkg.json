@@ -2,7 +2,6 @@
 	"name": "explo",
 	"version": "1.0.0",
 	"description": "Explo(RE/DE)",
-
 	"dependencies": [
 		"entt",
 		"catch2",
@@ -16,5 +15,6 @@
 		"tinygltf",
 		"gtest",
 		"benchmark"
-	]
+	],
+	"builtin-baseline": "8e8a3d7c1a6f7f587b486663b1e814911e6f2342"
 }
