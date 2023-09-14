@@ -4,13 +4,14 @@
 
 namespace explo
 {
-	class SinCosVolumeGenerator : public VolumeGenerator
-	{
-	public:
-		explicit SinCosVolumeGenerator() = default;
-		~SinCosVolumeGenerator() = default;
 
-		void generate_volume(Chunk& chunk) override;
-	};
+    class SinCosVolumeGenerator : public VolumeGenerator
+    {
+       public:
+        explicit SinCosVolumeGenerator() = default;
+        ~SinCosVolumeGenerator() = default;
 
-} // namespace explo
+        void generate_volume(Chunk &chunk) override;
+    };
+
+}  // namespace explo

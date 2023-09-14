@@ -6,93 +6,90 @@
 using namespace explo;
 
 VirtualAllocator::VirtualAllocator(size_t size, size_t alignment, size_t min_page_size) :
-	m_alignment(alignment)
+    m_alignment(alignment)
 {
-	// Calc page size (ensure it's a multiple of alignment)
-	if (m_alignment > 0)
-	{
-		m_page_size = m_alignment;
-		while (m_page_size < min_page_size)
-			m_page_size *= 2;
-	}
-	else m_page_size = min_page_size;
+    // Calc page size (ensure it's a multiple of alignment)
+    if (m_alignment > 0)
+    {
+        m_page_size = m_alignment;
+        while (m_page_size < min_page_size) m_page_size *= 2;
+    }
+    else
+        m_page_size = min_page_size;
 
-	resize(size);
+    resize(size);
 }
 
-VirtualAllocator::~VirtualAllocator()
-{
-}
+VirtualAllocator::~VirtualAllocator() {}
 
 void VirtualAllocator::resize(size_t new_size)
 {
-	size_t num_pages = std::ceil(double(new_size) / double(m_page_size));
-	new_size = num_pages * m_page_size;
+    size_t num_pages = std::ceil(double(new_size) / double(m_page_size));
+    new_size = num_pages * m_page_size;
 
-	m_size = new_size;
-	m_page_status.resize(num_pages);
+    m_size = new_size;
+    m_page_status.resize(num_pages);
 }
 
-bool VirtualAllocator::allocate(size_t size, size_t& offset)
+bool VirtualAllocator::allocate(size_t size, size_t &offset)
 {
-	int num_required_pages = std::ceil(double(size) / double(m_page_size));
+    int num_required_pages = std::ceil(double(size) / double(m_page_size));
 
-	int found_page_start_idx = -1;
-	int num_found_pages = 0;
-	bool found = false;
+    int found_page_start_idx = -1;
+    int num_found_pages = 0;
+    bool found = false;
 
-	for (int i = 0; i < m_page_status.size(); i++)
-	{
-		if (m_page_status.at(i) == 0)
-		{
-			if (found_page_start_idx < 0) found_page_start_idx = i;
+    for (int i = 0; i < m_page_status.size(); i++)
+    {
+        if (m_page_status.at(i) == 0)
+        {
+            if (found_page_start_idx < 0) found_page_start_idx = i;
 
-			num_found_pages++;
-			if (num_found_pages == num_required_pages)
-			{
-				found = true;
-				break;
-			}
-		}
-		else
-		{
-			found_page_start_idx = -1;
-			num_found_pages = 0;
-		}
-	}
+            num_found_pages++;
+            if (num_found_pages == num_required_pages)
+            {
+                found = true;
+                break;
+            }
+        }
+        else
+        {
+            found_page_start_idx = -1;
+            num_found_pages = 0;
+        }
+    }
 
-	if (found)
-	{
-		offset = found_page_start_idx * m_page_size;
+    if (found)
+    {
+        offset = found_page_start_idx * m_page_size;
 
-		for (int i = 0; i < num_required_pages - 1; i++)
-			m_page_status[found_page_start_idx + i] = 0xFF;
-		m_page_status[found_page_start_idx + num_required_pages - 1] = 0x7F; // MSB not set because there's no continuation page
+        for (int i = 0; i < num_required_pages - 1; i++) m_page_status[found_page_start_idx + i] = 0xFF;
+        m_page_status[found_page_start_idx + num_required_pages - 1] = 0x7F;  // MSB not set because there's no continuation page
 
-		m_num_allocated_pages += num_required_pages;
+        m_num_allocated_pages += num_required_pages;
 
-		assert(m_alignment > 0 && offset % m_alignment == 0);
+        assert(m_alignment > 0 && offset % m_alignment == 0);
 
-		return true;
-	}
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 void VirtualAllocator::free(size_t offset)
 {
-	int start_page_idx = std::floor(double(offset) / double(m_page_size));
-	assert((m_page_status.at(start_page_idx) & 0x7F) != 0);
-	assert(start_page_idx == 0 || (m_page_status.at(start_page_idx - 1) & 0x80) == 0); // The previous page shouldn't be a continuation page
+    int start_page_idx = std::floor(double(offset) / double(m_page_size));
+    assert((m_page_status.at(start_page_idx) & 0x7F) != 0);
+    assert(start_page_idx == 0 || (m_page_status.at(start_page_idx - 1) & 0x80) == 0);  // The previous page shouldn't be a continuation page
 
-	for (int i = start_page_idx; i < m_page_status.size(); i++)
-	{
-		uint8_t page_status = m_page_status.at(i);
-		assert((page_status & 0x7F) != 0);
+    for (int i = start_page_idx; i < m_page_status.size(); i++)
+    {
+        uint8_t page_status = m_page_status.at(i);
+        assert((page_status & 0x7F) != 0);
 
-		m_page_status[i] = 0;
-		m_num_allocated_pages--;
+        m_page_status[i] = 0;
+        m_num_allocated_pages--;
 
-		if ((page_status & 0x80) == 0) break;
-	}
+        if ((page_status & 0x80) == 0) break;
+    }
 }

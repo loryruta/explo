@@ -4,12 +4,12 @@
 
 namespace explo
 {
-	// Forward decl
-	class Chunk;
+    // Forward decl
+    class Chunk;
 
-	class SurfaceGenerator
-	{
-	public:
-		virtual void generate(Chunk& chunk, SurfaceWriter& surface_writer) = 0;
-	};
-} // namespace explo
+    class SurfaceGenerator
+    {
+       public:
+        virtual void generate(Chunk &chunk, SurfaceWriter &surface_writer) = 0;
+    };
+}  // namespace explo
