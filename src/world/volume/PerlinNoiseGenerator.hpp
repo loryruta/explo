@@ -7,19 +7,19 @@ namespace explo
 {
     class PerlinNoiseGenerator : public VolumeGenerator
     {
-       public:
+    public:
         static constexpr uint32_t k_max_world_height = 100;
 
-       private:
+    private:
         siv::PerlinNoise m_perlin_noise;
 
-       public:
+    public:
         explicit PerlinNoiseGenerator();
         ~PerlinNoiseGenerator();
 
         void generate_volume(Chunk &chunk);
 
-       private:
+    private:
         int get_height_at(int x, int z);
     };
 }  // namespace explo

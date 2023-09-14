@@ -17,4 +17,6 @@ BinPackParameters: false
 NamespaceIndentation: All
 ReferenceAlignment: Left
 AllowAllParametersOfDeclarationOnNextLine: true
+IndentAccessModifiers: false
+AccessModifierOffset: -4
 ---

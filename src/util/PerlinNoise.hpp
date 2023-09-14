@@ -83,7 +83,7 @@ namespace siv
     template <class Float>
     class BasicPerlinNoise
     {
-       public:
+    public:
         static_assert(std::is_floating_point_v<Float>);
 
         ///////////////////////////////////////
@@ -221,7 +221,7 @@ namespace siv
             value_type x, value_type y, value_type z, std::int32_t octaves, value_type persistence = value_type(0.5)
         ) const noexcept;
 
-       private:
+    private:
         state_type m_permutation;
     };
 

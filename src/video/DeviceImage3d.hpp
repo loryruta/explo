@@ -11,7 +11,7 @@ namespace explo
 
     class DeviceImage3d
     {
-       public:
+    public:
         struct WriteRegionOp
         {
             std::shared_ptr<vren::vk_utils::buffer> m_buffer;
@@ -32,7 +32,7 @@ namespace explo
             WriteRegionOp m_write_region;  // OP_WRITE_REGION
         };
 
-       private:
+    private:
         Renderer &m_renderer;
 
         std::shared_ptr<vren::vk_utils::combined_image_view> m_image;
@@ -42,7 +42,7 @@ namespace explo
 
         std::vector<Op> m_operations;
 
-       public:
+    public:
         explicit DeviceImage3d(Renderer &renderer, glm::ivec3 const &size, VkFormat format, VkMemoryPropertyFlags memory_properties);
         ~DeviceImage3d();
 
@@ -54,7 +54,7 @@ namespace explo
 
         void record(VkCommandBuffer command_buffer, vren::resource_container &resource_container);
 
-       private:
+    private:
         void perform_write_region(VkCommandBuffer command_buffer, vren::resource_container &resource_container, WriteRegionOp const &write_region_op);
 
         vren::vk_utils::combined_image_view create_image();

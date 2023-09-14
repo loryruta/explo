@@ -9,10 +9,10 @@ namespace explo
     /// A helper class intended to aid the generation of a Surface.
     class SurfaceWriter
     {
-       private:
+    private:
         Surface &m_surface;
 
-       public:
+    public:
         explicit SurfaceWriter(Surface &surface);
         ~SurfaceWriter() = default;
 

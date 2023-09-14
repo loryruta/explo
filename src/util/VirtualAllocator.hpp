@@ -10,7 +10,7 @@ namespace explo
     /// An allocator that allows resizing of the managed memory.
     class VirtualAllocator
     {
-       private:
+    private:
         size_t m_size;
         size_t m_alignment;
 
@@ -22,7 +22,7 @@ namespace explo
 
         int m_num_allocated_pages = 0;
 
-       public:
+    public:
         /// \param size The initial size of the allocable space.
         /// \param alignment Every allocation offset will be a multiple of this number (0 means not set).
         /// \param min_page_size The actual page size will be at least this value and a multiple of alignment.

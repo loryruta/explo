@@ -13,7 +13,7 @@ namespace explo
 
     class DeviceBuffer
     {
-       public:
+    public:
         struct CopyOp
         {
             std::shared_ptr<vren::vk_utils::buffer> m_src_buffer;
@@ -23,7 +23,7 @@ namespace explo
             uint64_t m_size;
         };
 
-       private:
+    private:
         Renderer &m_renderer;
 
         VkMemoryPropertyFlags m_memory_properties;
@@ -34,7 +34,7 @@ namespace explo
 
         std::vector<CopyOp> m_operations;
 
-       public:
+    public:
         explicit DeviceBuffer(Renderer &renderer, VkMemoryPropertyFlags memory_properties, VkBufferUsageFlags buffer_usages, size_t init_size);
         ~DeviceBuffer();
 
@@ -47,7 +47,7 @@ namespace explo
 
         void record(VkCommandBuffer command_buffer, vren::resource_container &resource_container);
 
-       private:
+    private:
         vren::vk_utils::buffer create_buffer(size_t size);
 
         void perform_copy(VkCommandBuffer command_buffer, vren::resource_container &resource_container, CopyOp const &copy_op);

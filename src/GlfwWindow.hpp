@@ -10,10 +10,10 @@ namespace explo
 {
     class GlfwWindow
     {
-       private:
+    private:
         GLFWwindow *m_handle;
 
-       public:
+    public:
         explicit GlfwWindow(GLFWwindow *handle);
         GlfwWindow(GlfwWindow const &other) = delete;
         ~GlfwWindow();

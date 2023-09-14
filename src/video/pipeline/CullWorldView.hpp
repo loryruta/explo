@@ -28,12 +28,12 @@ namespace explo
             float _pad2;
         };
 
-       private:
+    private:
         Renderer &m_renderer;
 
         vren::pipeline m_pipeline;
 
-       public:
+    public:
         explicit CullWorldView(Renderer &renderer);
         ~CullWorldView();
 
@@ -41,7 +41,7 @@ namespace explo
 
         vren::render_graph_t create_render_graph_node(vren::render_graph_allocator &allocator);
 
-       private:
+    private:
         vren::pipeline create_pipeline();
     };
 

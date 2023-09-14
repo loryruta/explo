@@ -9,7 +9,7 @@ namespace explo
 
     class SurfaceGenerator
     {
-       public:
+    public:
         virtual void generate(Chunk &chunk, SurfaceWriter &surface_writer) = 0;
     };
 }  // namespace explo

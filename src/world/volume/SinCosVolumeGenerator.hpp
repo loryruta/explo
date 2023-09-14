@@ -7,7 +7,7 @@ namespace explo
 
     class SinCosVolumeGenerator : public VolumeGenerator
     {
-       public:
+    public:
         explicit SinCosVolumeGenerator() = default;
         ~SinCosVolumeGenerator() = default;
 

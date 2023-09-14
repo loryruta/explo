@@ -9,13 +9,13 @@ namespace explo
     template <typename _T>
     class CircularImage3d
     {
-       private:
+    private:
         Image3d<_T> &m_image_3d;
 
         glm::ivec3 m_size;
         glm::ivec3 m_offset;
 
-       public:
+    public:
         explicit CircularImage3d(Image3d<_T> &image_3d, glm::uvec3 const &size) :
             m_image_3d(image_3d),
             m_size(size)
@@ -29,7 +29,7 @@ namespace explo
 
         void shift(glm::ivec3 const &offset) { m_offset += offset; }
 
-       private:
+    private:
         glm::uvec3 to_image_position(glm::ivec3 const &position) { return (position + m_offset) % m_size; }
     };
 }  // namespace explo

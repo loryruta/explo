@@ -15,7 +15,7 @@ namespace explo
 {
     class Game
     {
-       public:
+    public:
         /* Misc utils */
         SyncJobExecutor m_main_thread_executor;
         ThreadPool m_thread_pool;
@@ -42,7 +42,7 @@ namespace explo
         std::shared_ptr<Entity> m_player;
         std::unique_ptr<EntityController> m_player_controller;
 
-       public:
+    public:
         explicit Game(GlfwWindow &window);
         ~Game();
 
@@ -57,7 +57,7 @@ namespace explo
         void on_window_resize(uint32_t width, uint32_t height);
         void render();
 
-       private:
+    private:
         void late_initialize();
 
         void on_key_change(int key, int action);

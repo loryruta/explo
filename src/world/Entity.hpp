@@ -11,7 +11,7 @@ namespace explo
 {
     class Entity : public std::enable_shared_from_this<Entity>
     {
-       private:
+    private:
         World *m_world;
 
         glm::vec3 m_position;
@@ -22,7 +22,7 @@ namespace explo
 
         std::unique_ptr<WorldView> m_world_view;
 
-       public:
+    public:
         inline static glm::vec3 k_camera_offset = glm::vec3(0, 2 /* Entity's height */, 0);
 
         explicit Entity(World &world, glm::vec3 const &init_position = glm::vec3(0));

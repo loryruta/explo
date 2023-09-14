@@ -33,7 +33,7 @@ namespace explo
         friend class DeviceImage3d;
         friend class DrawChunkList;
 
-       private:
+    private:
         GLFWwindow *m_window;
 
         vren::context m_context;
@@ -76,7 +76,7 @@ namespace explo
         CullWorldView m_cull_world_view;
         DrawChunkList m_draw_chunk_list;
 
-       public:
+    public:
         static constexpr size_t k_chunk_draw_list_buffer_size = 8388608;  // 8MB
 
         VkClearColorValue m_background_color = VkClearColorValue{0.32f, 0.933f, 1.0f, 0.0f};
@@ -111,7 +111,7 @@ namespace explo
 
         void render();
 
-       private:
+    private:
         void on_swapchain_change(vren::swapchain const &swapchain);
 
         /// Flushes the host operations pending on the device buffers (e.g. vertex buffer, index buffer, ...).

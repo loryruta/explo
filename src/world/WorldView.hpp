@@ -18,12 +18,12 @@ namespace explo
         static constexpr size_t k_max_side = k_max_render_distance * 2 + 1;
         static constexpr size_t k_max_size = k_max_side * k_max_side * k_max_side;
 
-       private:
+    private:
         World &m_world;
         glm::ivec3 m_position;
         glm::ivec3 m_render_distance;
 
-       public:
+    public:
         explicit WorldView(World &world, glm::ivec3 const &init_position, glm::ivec3 const &render_distance);
         ~WorldView();
 

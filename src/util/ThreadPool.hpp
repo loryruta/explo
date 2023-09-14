@@ -12,10 +12,10 @@ namespace explo
 {
     class ThreadPool
     {
-       public:
+    public:
         inline static constexpr size_t k_max_threads = 32;
 
-       private:
+    private:
         std::vector<std::thread> m_threads;
         std::deque<std::function<void()>> m_jobs;
         std::condition_variable m_condition_variable;
@@ -29,7 +29,7 @@ namespace explo
 
         std::bitset<k_max_threads> m_thread_working;
 
-       public:
+    public:
         explicit ThreadPool(size_t num_threads);
         explicit ThreadPool();
         ~ThreadPool();
@@ -43,7 +43,7 @@ namespace explo
 
         void drain();
 
-       private:
+    private:
         void thread_loop(size_t thread_id);
     };
 }  // namespace explo

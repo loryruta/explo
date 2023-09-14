@@ -9,11 +9,11 @@ namespace explo
     template <typename _T>
     class Image3d
     {
-       protected:
+    protected:
         glm::uvec3 m_size;
         std::vector<_T> m_image_data;
 
-       public:
+    public:
         explicit Image3d(glm::uvec3 const &size) :
             m_size(size)
         {

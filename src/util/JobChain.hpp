@@ -9,13 +9,13 @@ namespace explo
     /// An utility class used to avoid callbacks nesting for sequential jobs dispatch.
     class JobChain
     {
-       public:
+    public:
         using JobT = std::function<void()>;
 
-       private:
+    private:
         std::list<JobT> m_jobs;
 
-       public:
+    public:
         explicit JobChain();
         ~JobChain();
 

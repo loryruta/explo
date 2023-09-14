@@ -15,16 +15,16 @@ namespace explo
         friend class Chunk;
         friend class Entity;
 
-       public:
+    public:
         using ChunkLoadedCallbackT = std::function<void(std::shared_ptr<Chunk> const &)>;
 
-       private:
+    private:
         VolumeGenerator &m_volume_generator;
         SurfaceGenerator &m_surface_generator;
 
         std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>, vec_hash> m_chunks;
 
-       public:
+    public:
         explicit World(VolumeGenerator &volume_generator, SurfaceGenerator &surface_generator);
         ~World();
 
@@ -41,7 +41,7 @@ namespace explo
         std::pair<Chunk &, bool> load_chunk_async(glm::ivec3 const &chunk_pos, ChunkLoadedCallbackT const &callback);
         bool unload_chunk(glm::ivec3 const &chunk_pos);
 
-       private:
+    private:
         void generate_chunk_surface(Chunk &chunk);
         void generate_chunk_async(std::shared_ptr<Chunk> const &chunk, ChunkLoadedCallbackT const &callback);
     };

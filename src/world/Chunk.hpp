@@ -36,12 +36,12 @@ namespace explo
         friend class VolumeGenerator;
         friend class SurfaceGenerator;
 
-       public:
+    public:
         static constexpr glm::ivec3 k_grid_size = glm::ivec3(16, 256, 16);  ///< How many blocks does a chunk contain
         static constexpr glm::vec3 k_world_size =
             glm::vec3(16.0f, 256.0f, 16.0f);  ///< The size of the chunk in world space (commonly equal to the grid size)
 
-       private:
+    private:
         World &m_world;
         glm::ivec3 m_position;
 
@@ -50,7 +50,7 @@ namespace explo
 
         std::unique_ptr<Surface> m_surface;
 
-       public:
+    public:
         explicit Chunk(World &world, glm::ivec3 const &position);
         ~Chunk();
 

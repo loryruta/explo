@@ -6,7 +6,7 @@ namespace explo
 {
     class VolumeGenerator
     {
-       public:
+    public:
         explicit VolumeGenerator() = default;
         ~VolumeGenerator() = default;
 

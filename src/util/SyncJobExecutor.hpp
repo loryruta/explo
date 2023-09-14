@@ -8,15 +8,15 @@ namespace explo
 {
     class SyncJobExecutor
     {
-       public:
+    public:
         using JobT = std::function<void()>;
 
-       private:
+    private:
         std::deque<JobT> m_jobs;
 
         mutable std::mutex m_mutex;
 
-       public:
+    public:
         explicit SyncJobExecutor();
         ~SyncJobExecutor() = default;
 

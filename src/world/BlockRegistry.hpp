@@ -9,10 +9,10 @@ namespace explo
 {
     class BlockRegistry
     {
-       private:
+    private:
         std::vector<BlockData> m_block_data;
 
-       public:
+    public:
         explicit BlockRegistry();
         ~BlockRegistry() = default;
 

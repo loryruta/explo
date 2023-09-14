@@ -14,12 +14,12 @@ namespace explo
     /// The draw is indirect since the draw calls (i.e. which chunk to render) are filled dynamically by CullWorldView.
     class DrawChunkList
     {
-       private:
+    private:
         Renderer &m_renderer;
 
         vren::basic_renderer m_basic_renderer;
 
-       public:
+    public:
         explicit DrawChunkList(Renderer &renderer);
         ~DrawChunkList();
 

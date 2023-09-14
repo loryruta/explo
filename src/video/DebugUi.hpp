@@ -7,16 +7,16 @@ namespace explo
 
     class DebugUi
     {
-       private:
+    private:
         Renderer &m_renderer;
 
-       public:
+    public:
         explicit DebugUi(Renderer &renderer);
         ~DebugUi();
 
         void display();
 
-       private:
+    private:
         void display_jobs_window();
         void display_player_window();
         void display_world_view_window();

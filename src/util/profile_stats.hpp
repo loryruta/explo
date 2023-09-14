@@ -14,11 +14,11 @@ namespace explo
     template <typename _t>
     class base_monitor
     {
-       protected:
+    protected:
         _t m_handle;
         mutable std::mutex m_mutex;
 
-       public:
+    public:
         _t read() const
         {
             std::lock_guard<std::mutex> lock(m_mutex);
@@ -58,7 +58,7 @@ namespace explo
 
         size_t m_sample_count = 0;  ///< The total number of samples pushed
 
-       public:
+    public:
         explicit profile_stats() = default;
         ~profile_stats() = default;
 
@@ -82,7 +82,7 @@ namespace explo
     template <>
     class monitor<profile_stats> : public base_monitor<profile_stats>
     {
-       public:
+    public:
         void push_elapsed_time(uint64_t elapsed_time);
     };
 

@@ -12,12 +12,12 @@ namespace explo
 
         using TraversalCallbackT = std::function<void(uint32_t value, uint32_t level, uint32_t morton_code)>;
 
-       private:
+    private:
         std::vector<uint32_t> m_data;
         uint32_t m_depth;
         uint32_t m_next_alloc_index = 8;
 
-       public:
+    public:
         explicit Octree(uint32_t depth);
         ~Octree();
 
@@ -34,7 +34,7 @@ namespace explo
         static uint32_t to_morton_code(glm::ivec3 const &voxel_pos);
         static glm::ivec3 to_voxel_position(uint32_t morton_code);
 
-       private:
+    private:
         void traverse_r(uint32_t node_idx, uint32_t depth, uint32_t morton_code, TraversalCallbackT const &callback) const;
     };
 }  // namespace explo
